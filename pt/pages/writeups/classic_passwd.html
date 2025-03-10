@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt">
+	<head>
+		<meta charset="UTF-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>THM - Classic Passwd</title>
+		<link rel="stylesheet" type="text/css" href="/styles/global.css">
+		<link rel="icon" type="image/png" href="/images/icon.png">
+	</head>
+	<body>
+		<header>
+			<nav class="navbar">
+				<ul style="display: flex; list-style-type: none; padding: 0;">
+					<li style="margin-right: 20px;"><a href="/pt/index.html">H0ME</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/whoami.html">0xWHO4MI</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/articles.html">ART1G0S</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/writeups.html">WR1T3UPS</a></li>
+                    <li><a href="/en/index.html">EN-US</a></li>
+				</ul>
+			</nav>
+		</header>
+		<pre class="dystopian">
+▓█████▄   ▓██   ██▓   ██████   ▄▄▄█████▓   ▒█████     ██▓███     ██▓   ▄▄▄         ███▄    █ 
+▒██   █▌  ▒██   ██▒▒ ██    ▒   ▓  ██▒ ▓▒  ▒██▒  ██▒  ▓██░  ██  ▒▓██▒▒  ████▄       ██ ▀█   █ 
+░██   █▌   ▒██ ██░    ▓██▄     ▒ ▓██░ ▒░  ▒██░  ██▒  ▓██░ ██▓  ▒▒██▒▒  ██  ▀█▄    ▓██  ▀█ ██▒
+░▓█   █▌   ░ ▐██▓░    ▒   ██▒  ░ ▓██  ░   ▒██   ██░  ▒██▄█▓▒   ▒░██░░  ██▄▄▄▄██    ██   ▐▌██▒
+░█████▓    ░ ██▒░    ██████▒▒    ▒██▒ ░   ░ ████▓▒░  ▒██▒ ░    ░░██░   ▓█   ▓██   ▒██░   ▓██░
+▒▒▓  ▒      ██▒▒  ▒  ▒▓▒ ▒ ░    ▒ ░░   ░   ▒ ▒░ ░ ▒  ▓██       ░░▓     ▒▒   ▓▒█░  ░ ▒░   ▒ ▒ 
+░ ▒  ▒    ▓██ ░ ░ ░  ░▒  ░ ░      ░    ░   ░ ▒ ▒░ ░  ▒ ░        ▒ ░    ▒   ▒▒ ░  ░ ░░   ░ ▒░
+░ ░  ░    ▒ ▒  ░  ░    ░  ░      ░      ░   ░ ░ ▒  ░  ░          ▒ ░    ░   ▒        ░   ░ ░ 
+		</pre>
+        <div class="box_text">
+            <h1 style="text-align: center;">THM - Classic Passwd</h1><hr>
+            <h2>- Resolução objetiva</h2>
+            <p>Este writeup foi feito para a máquina <a href="https://tryhackme.com/room/classicpasswd" target="_blank" style="color: chartreuse;">[Classic Passwd]</a> da plataforma TryHackMe. O objetivo é obter a flag a partir da engenharia reversa em um simples ELF x64.</p>
+            <p>Primeiro foi realizado uma simples análise do binário:</p>
+            <div class="box_text">
+                <p>file Challenge_1609966715991.Challenge</p>
+                <p>Challenge_1609966715991.Challenge: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=b80ce38cb25d043128bc2c4e1e122c3d4fbba7f7, for GNU/Linux 3.2.0, not stripped</p>
+            </div>
+            <p>Execução simples antes de começar o debugging:</p>
+            <div class="box_text">
+                <p>./Challenge_1609966715991.Challenge</p>
+                <p>Insert your username: Noxurge</p>
+                <p>Authentication Error</p>
+            </div>
+            <p>Vi que um erro é exibido ao tentar colocar qualquer usuário que não é o correto, sugerindo uma comparação.</p>
+            <p>A forma fácil de resolver esse desafio é usando o <u style="color: red;">ltrace</u>. Mas antes de continuar, irei esclarecer algo. O que é o ltrace? O ltrace é um binário CLI para interceptar e gravar dinamicamente chamadas de bibliotecas que são chamadas quando um processo é executado e sinais são recebidos pelo processo. Ele pode interceptar e exibir chamadas do sistema executadas pelo programa.</p>
+            <div class="box_text">
+                <p>ltrace ./Challenge_1609966715991.Challenge</p>
+                <p>printf("Insert your username: ")                                                                         = 22</p>
+                <p>__isoc99_scanf(0x55ef465c201b, 0x7ffe915915c0, 0, 0Insert your username: Noxurge</p>
+                <p>)                                                     = 1</p>
+                <p>strcpy(0x7ffe91591530, "Noxurge")                                                                        = 0x7ffe91591530</p>
+                <p>strcmp("Noxurge", "AGB6js5d9dkG7")                                                                       = 13</p>
+                <p>puts("\nAuthentication Error"</p>
+                <p>Authentication Error</p>
+                <p>)                                                                           = 22</p>
+                <p>exit(0 &lt;no return ...&gt;</p>
+                <p>+++ exited (status 0) +++</p>
+                <p></p>
+            </div>
+            <p>O binário em análise compara o que digitamos com a string <u style="color: red;">AGB6js5d9dkG7</u>, ao usar o valor que ele compara, a flag então é exibida.</p>
+            <div class="box_text">
+                <p>./Challenge_1609966715991.Challenge</p>
+                <p>Insert your username: AGB6js5d9dkG7</p>   
+                <p>Welcome</p>
+                <p>THM{REDACTED}</p>
+            </div>
+			<hr>
+            <h2>- Análise do binário no Ghidra</h2>
+            <p>Refiz a análise a partir dos códigos extraídos do Ghidra para melhor entendimento do funcionamento do binário original, onde temos a “main” com chamadas para as funções “<u style="color: red;">vuln</u>” e “<u style="color: red;">gfl</u>”.<br>
+            <br>
+            Código da função <u style="color: red;">vuln</u> reescrito e comentado:<br>
+            <br></p>
+            <div class="box_text">
+                <p>#include &lt;string.h&gt;</p>
+                <p>#include &lt;stdio.h&gt;</p>
+                <p>#include &lt;stdlib.h&gt;</p>
+                <p></p>
+                <p>int main () {</p>
+                <p>&nbsp;&nbsp;int flag;</p>
+                <p>&nbsp;&nbsp;char userAnswer [130];</p>
+                <p>&nbsp;&nbsp;char passwordBuffer [526];</p>
+                <p>&nbsp;&nbsp;</p>
+                <p>&nbsp;&nbsp;strncpy(passwordBuffer,"AGB6js5d9dkG7",0xe); // &lt;-- Copia o usuário correto para a váriavel passwordBuffer</p>
+                <p>&nbsp;&nbsp;printf("Insert your username: ");</p>
+                <p>&nbsp;&nbsp;scanf("%s", passwordBuffer + 0xe); // &lt;-- Input do usuário </p>
+                <p>&nbsp;&nbsp;strcpy(userAnswer,passwordBuffer + 0xe); // &lt;-- Copia o input do usuário para userAnswer</p>
+                <p>&nbsp;&nbsp;flag = strcmp(userAnswer,passwordBuffer); // &lt;-- Compara o input do usuário com a string "AGB6js5d9dkG7"</p>
+                <p>&nbsp;&nbsp;</p>
+                <p>&nbsp;&nbsp;// Em caso da verificação for verdadeira a mensagem é exibida</p>
+                <p>&nbsp;&nbsp;if (flag == 0) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;puts("\nWelcome");</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;return 0;</p>
+                <p>&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;// Caso a verificação acima falhe, o resultado é o seguinte</p>
+                <p>&nbsp;&nbsp;puts("\nAuthentication Error");</p>
+                <p>&nbsp;&nbsp;exit(1);</p>
+                <p>}</p>
+            </div>
+            <p>Código da função <u style="color: red;">glf</u> reescrito e comentado:</p>
+            <div class="box_text">
+                <p>#include &lt;string.h&gt;</p>
+                <p>#include &lt;stdio.h&gt;</p>
+                <p>#include &lt;stdlib.h&gt;</p>
+                <p>#include &lt;stdbool.h&gt;</p>
+                <p></p>
+                <p>int main() {</p>
+                <p>&nbsp;&nbsp;int i;</p>
+                <p>&nbsp;&nbsp;int count;</p>
+                <p>&nbsp;&nbsp;</p>
+                <p>&nbsp;&nbsp;// Define um contador</p>
+                <p>&nbsp;&nbsp;count = 0x52c8d5;</p>
+                <p>&nbsp;&nbsp;// Inicia um loop de infinito</p>
+                <p>&nbsp;&nbsp;do {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;// Verifica se 0x77d088 é menor que count, em caso afirmativo retorna 0</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;if (0x77d088 &lt; count) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 0;</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;// Verifica se count é igual a 0x638a78</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;if (count == 0x638a78) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Inicia um loop em 5236 e vai até i menor que 9999</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for (i = 0x1474; i &lt; 9999; i++) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Verifica se i é igual a 8496</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (i == 0x2130) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;printf("THM{%d%d}\n",0x638a78,0x2130); // &lt;-- Exibe a flag</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exit(0); // &lt;-- Sai do programa</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;count++; // &lt;-- Aumenta o contador</p>
+                <p>&nbsp;&nbsp;} while( true ); // &lt;-- Mantém o loop infinito</p>
+                <p>}</p>
+            </div>
+            <p>A função de <u style="color: red;">vuln</u> vem primeiro do que <u style="color: red;">glf</u>, então o programa passa por ela primeiro e caso não seja atendida a condição o programa se encerra. Compilando apenas o glf também é possível obter a flag:</p>
+            <div class="box_text">
+                <p>gcc glf.c -o glf</p>
+                <p>./glf</p>
+                <p>THM{REDACTED}</p>
+            </div>
+            <hr>
+            <h2 style="text-align: center;">- Links úteis -</h2>
+            <div style="text-align: center;">
+                <a href="https://man7.org/linux/man-pages/man1/ltrace.1.html" target="_blank" style="color: chartreuse;">- Manual do ltrace -</a><br>
+                <a href="https://www.ltrace.org/" target="_blank" style="color: chartreuse;">- Site do ltrace -</a><br>
+                <a href="https://ghidra-sre.org/" target="_blank"style="color: chartreuse;">- Site do Ghidra -</a><br>
+            </div>
+            <hr>
+		</div>
+    </body>
+</html>
