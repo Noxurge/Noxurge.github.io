@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt">
+	<head>
+		<meta charset="UTF-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>THM - Classic Passwd</title>
+		<link rel="stylesheet" type="text/css" href="/styles/global.css">
+		<link rel="icon" type="image/png" href="/images/icon.png">
+	</head>
+	<body>
+		<header>
+			<nav class="navbar">
+				<ul style="display: flex; list-style-type: none; padding: 0;">
+					<li style="margin-right: 20px;"><a href="/pt/index.html">H0ME</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/whoami.html">0xWHO4MI</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/articles.html">ART1G0S</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/writeups.html">WR1T3UPS</a></li>
+                    <li><a href="/en/index.html">EN-US</a></li>
+				</ul>
+			</nav>
+		</header>
+		<pre class="dystopian">
+▓█████▄   ▓██   ██▓   ██████   ▄▄▄█████▓   ▒█████     ██▓███     ██▓   ▄▄▄         ███▄    █ 
+▒██   █▌  ▒██   ██▒▒ ██    ▒   ▓  ██▒ ▓▒  ▒██▒  ██▒  ▓██░  ██  ▒▓██▒▒  ████▄       ██ ▀█   █ 
+░██   █▌   ▒██ ██░    ▓██▄     ▒ ▓██░ ▒░  ▒██░  ██▒  ▓██░ ██▓  ▒▒██▒▒  ██  ▀█▄    ▓██  ▀█ ██▒
+░▓█   █▌   ░ ▐██▓░    ▒   ██▒  ░ ▓██  ░   ▒██   ██░  ▒██▄█▓▒   ▒░██░░  ██▄▄▄▄██    ██   ▐▌██▒
+░█████▓    ░ ██▒░    ██████▒▒    ▒██▒ ░   ░ ████▓▒░  ▒██▒ ░    ░░██░   ▓█   ▓██   ▒██░   ▓██░
+▒▒▓  ▒      ██▒▒  ▒  ▒▓▒ ▒ ░    ▒ ░░   ░   ▒ ▒░ ░ ▒  ▓██       ░░▓     ▒▒   ▓▒█░  ░ ▒░   ▒ ▒ 
+░ ▒  ▒    ▓██ ░ ░ ░  ░▒  ░ ░      ░    ░   ░ ▒ ▒░ ░  ▒ ░        ▒ ░    ▒   ▒▒ ░  ░ ░░   ░ ▒░
+░ ░  ░    ▒ ▒  ░  ░    ░  ░      ░      ░   ░ ░ ▒  ░  ░          ▒ ░    ░   ▒        ░   ░ ░ 
+		</pre>
+        <div class="box_text">
+            <h1 style="text-align: center;">HTB - SpookyPass</h1><hr>
+            <h2>- Resolução objetiva</h2>
+            <p>Neste write-up, analisarei o desafio SpookyPass do HackTheBox, que pertence à categoria de Engenharia Reversa. Utilizarei diferentes abordagens para extrair a flag, incluindo análise dinâmica e estática do binário. Começo com a verificação do binário:</p>
+            <div class="box_text">
+                <p>file pass </p>
+                <p>pass: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=3008217772cc2426c643d69b80a96c715490dd91, for GNU/Linux 4.4.0, not stripped</p>
+            </div>
+            <p>O binário é um ELF 64-bit, então executo ele em um ambiente controlado para entender seu comportamento inicial.</p>
+            <div class="box_text">
+                <p>./pass </p>
+                <p>Welcome to the SPOOKIEST party of the year.</p>
+                <p>Before we let you in, you'll need to give us the password: letmein</p>
+                <p>You're not a real ghost; clear off!</p>
+            </div>
+            <p>O binário então pede uma senha, digitando qualquer coisa a resposta é "<u style="color: red;">You're not a real ghost; clear off!</u>". Então vou para o próximo passo, analisar o comportamento dele pelo ltrace:</p>
+            <div class="box_text">
+                <p>ltrace ./pass</p>
+                <p>puts("Welcome to the SPOOKIESTelcome to the SPOOKIEST party of the year.</p>
+                <p>)                                                        = 54</p>
+                <p>printf("Before we let you in, you'll nee"...)                                                            = 59</p>
+                <p>fgets(Before we let you in, you'll need to give us the password: letmein</p>
+                <p>"letmein</p>
+                <p>", 128, 0x7f775eed8a80)                                                                  = 0x7ffc601d6010</p>
+                <p>strchr("letmein</p>
+                <p>", '</p>
+                <p>')                                                                                = "</p>
+                <p>"</p>
+                <p>strcmp("letmein", "s3cr3t_p455_f0r_gh05t5_4nd_gh0ul"...)                                                 = -7</p>
+                <p>puts("You're not a real ghost; clear o"...You're not a real ghost; clear off!</p>
+                <p>)                                                              = 36</p>
+                <p>+++ exited (status 0) +++</p>
+            </div>
+            <p>Aqui já é possível verificar que o binário compara minha entrada com a string “<u style="color: red;">s3cr3t_p455_f0r_gh05t5_4nd_gh0ul</u>”, porém ao tentar executar o programa com essa string, o mesmo erro ocorre:</p>
+            <div class="box_text">
+                <p>./pass</p>
+                <p>Welcome to the SPOOKIEST party of the year.</p>
+                <p>Before we let you in, you'll need to give us the password: s3cr3t_p455_f0r_gh05t5_4nd_gh0ul</p>
+                <p>You're not a real ghost; clear off!</p>
+            </div>
+            <p>Isso indica que falta alguma parte da senha ou essa senha é a incorreta.</p>
+            <p>Abaixo você pode ver o código que o Ghidra fornece ao fazer o decompile:</p>
+            <div class="box_text">
+                <p>undefined8 main(void)</p>
+                <p>{</p>
+                <p>&nbsp;&nbsp;int iVar1;</p>
+                <p>&nbsp;&nbsp;char *pcVar2;</p>
+                <p>&nbsp;&nbsp;long in_FS_OFFSET;</p>
+                <p>&nbsp;&nbsp;uint local_c4;</p>
+                <p>&nbsp;&nbsp;char local_b8 [32];</p>
+                <p>&nbsp;&nbsp;char local_98 [136];</p>
+                <p>&nbsp;&nbsp;long local_10;</p>
+                <p>&nbsp;&nbsp;</p>
+                <p>&nbsp;&nbsp;local_10 = *(long *)(in_FS_OFFSET + 0x28);</p>
+                <p>&nbsp;&nbsp;local_b8[0] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[1] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[2] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[3] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[4] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[5] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[6] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[7] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[8] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[9] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[10] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0xb] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0xc] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0xd] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0xe] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0xf] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x10] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x11] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x12] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x13] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x14] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x15] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x16] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x17] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x18] = '\0';</p>
+                <p>&nbsp;&nbsp;local_b8[0x19] = '\0';</p>
+                <p>&nbsp;&nbsp;puts("Welcome to the SPOOKIEST party of the year.");</p>
+                <p>&nbsp;&nbsp;printf("Before we let you in, you'll need to give us the password: ");</p>
+                <p>&nbsp;&nbsp;fgets(local_98,0x80,stdin);</p>
+                <p>&nbsp;&nbsp;pcVar2 = strchr(local_98,10);</p>
+                <p>&nbsp;&nbsp;if (pcVar2 != (char *)0x0) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;*pcVar2 = '\0';</p>
+                <p>&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;iVar1 = strcmp(local_98,"s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5");</p>
+                <p>&nbsp;&nbsp;if (iVar1 == 0) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;puts("Welcome inside!");</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;for (local_c4 = 0; local_c4 &lt; 0x1a; local_c4 = local_c4 + 1) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;local_b8[(int)local_c4] = (char)*(undefined4 *)(parts + (long)(int)local_c4 * 4);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;puts(local_b8);</p>
+                <p>&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;else {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;puts("You're not a real ghost; clear off!");</p>
+                <p>&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;if (local_10 != *(long *)(in_FS_OFFSET + 0x28)) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* WARNING: Subroutine does not return */</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;__stack_chk_fail();</p>
+                <p>&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;return 0;</p>
+                <p>}</p>
+            </div>
+            <p>De forma objetiva, com o decompile do Ghidra já consigo resolver o desafio, pois existe a comparação da minha entrada com a senha real, que é “<u style="color: red;">s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5</u>”:</p>
+            <div class="box_text">
+                <p>./pass</p>
+                <p>Welcome to the SPOOKIEST party of the year.</p>
+                <p>Before we let you in, you'll need to give us the password: s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5</p>
+                <p>Welcome inside!</p>
+                <p>HTB{REDACTED}</p>
+            </div>
+            <p>Finalizado por aqui, mas caso queira explorar um pouco mais, continue por aqui!</p>
+            <hr>
+            <h2>- Destrinchando</h2>
+            <p>Nos passos a seguir aprofundei um método diferente para descobrir a flag. Caso não seja possível visualizar a senha diretamente no código, ainda sim consigo resgatar a flag do desafio.</p>
+            <p>Para isso, basta analisar um pequeno trecho do decompile que o Ghidra realizou:</p>
+            <div class="box_text">
+                <p>if (iVar1 == 0) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;puts("Welcome inside!");</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;for (local_c4 = 0; local_c4 &lt; 0x1a; local_c4 = local_c4 + 1) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;local_b8[(int)local_c4] = (char)*(undefined4 *)(parts + (long)(int)local_c4 * 4); // &lt;-- Parte importante</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;puts(local_b8);</p>
+                <p>&nbsp;&nbsp;}</p>
+            </div>
+            <p>A parte do código em destaque, onde o array 'parts' está dentro do <u style="color: red;">for loop</u>, contém a flag. Para recuperar a flag original, basta remover os bytes nulos (0x00) e converter os valores hexadecimais de volta para caracteres.</p>
+            <div class="box_text">
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104060 48              undefined148h                     [0]                               XREF[3]:     Entry Point(*), main:00101284(*), </p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104061 00              undefined100h                     [1]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104062 00              undefined100h                     [2]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104063 00              undefined100h                     [3]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104064 54              undefined154h                     [4]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104065 00              undefined100h                     [5]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104066 00              undefined100h                     [6]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104067 00              undefined100h                     [7]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104068 42              undefined142h                     [8]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104069 00              undefined100h                     [9]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010406a 00              undefined100h                     [10]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010406b 00              undefined100h                     [11]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010406c 7b              undefined17Bh                     [12]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010406d 00              undefined100h                     [13]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010406e 00              undefined100h                     [14]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010406f 00              undefined100h                     [15]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104070 75              undefined175h                     [16]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104071 00              undefined100h                     [17]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104072 00              undefined100h                     [18]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104073 00              undefined100h                     [19]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104074 6e              undefined16Eh                     [20]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104075 00              undefined100h                     [21]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104076 00              undefined100h                     [22]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104077 00              undefined100h                     [23]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104078 30              undefined130h                     [24]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104079 00              undefined100h                     [25]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010407a 00              undefined100h                     [26]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010407b 00              undefined100h                     [27]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010407c 62              undefined162h                     [28]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010407d 00              undefined100h                     [29]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010407e 00              undefined100h                     [30]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010407f 00              undefined100h                     [31]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104080 66              undefined166h                     [32]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104081 00              undefined100h                     [33]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104082 00              undefined100h                     [34]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104083 00              undefined100h                     [35]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104084 75              undefined175h                     [36]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104085 00              undefined100h                     [37]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104086 00              undefined100h                     [38]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104087 00              undefined100h                     [39]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104088 35              undefined135h                     [40]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104089 00              undefined100h                     [41]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010408a 00              undefined100h                     [42]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010408b 00              undefined100h                     [43]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010408c 63              undefined163h                     [44]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010408d 00              undefined100h                     [45]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010408e 00              undefined100h                     [46]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010408f 00              undefined100h                     [47]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104090 34              undefined134h                     [48]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104091 00              undefined100h                     [49]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104092 00              undefined100h                     [50]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104093 00              undefined100h                     [51]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104094 74              undefined174h                     [52]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104095 00              undefined100h                     [53]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104096 00              undefined100h                     [54]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104097 00              undefined100h                     [55]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104098 33              undefined133h                     [56]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;00104099 00              undefined100h                     [57]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010409a 00              undefined100h                     [58]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010409b 00              undefined100h                     [59]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010409c 64              undefined164h                     [60]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010409d 00              undefined100h                     [61]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010409e 00              undefined100h                     [62]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0010409f 00              undefined100h                     [63]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a0 5f              undefined15Fh                     [64]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a1 00              undefined100h                     [65]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a2 00              undefined100h                     [66]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a3 00              undefined100h                     [67]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a4 35              undefined135h                     [68]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a5 00              undefined100h                     [69]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a6 00              undefined100h                     [70]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a7 00              undefined100h                     [71]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a8 74              undefined174h                     [72]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040a9 00              undefined100h                     [73]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040aa 00              undefined100h                     [74]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040ab 00              undefined100h                     [75]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040ac 72              undefined172h                     [76]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040ad 00              undefined100h                     [77]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040ae 00              undefined100h                     [78]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040af 00              undefined100h                     [79]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b0 31              undefined131h                     [80]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b1 00              undefined100h                     [81]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b2 00              undefined100h                     [82]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b3 00              undefined100h                     [83]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b4 6e              undefined16Eh                     [84]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b5 00              undefined100h                     [85]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b6 00              undefined100h                     [86]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b7 00              undefined100h                     [87]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b8 67              undefined167h                     [88]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040b9 00              undefined100h                     [89]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040ba 00              undefined100h                     [90]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040bb 00              undefined100h                     [91]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040bc 35              undefined135h                     [92]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040bd 00              undefined100h                     [93]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040be 00              undefined100h                     [94]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040bf 00              undefined100h                     [95]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040c0 7d              undefined17Dh                     [96]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040c1 00              undefined100h                     [97]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040c2 00              undefined100h                     [98]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040c3 00              undefined100h                     [99]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040c4 00              undefined100h                     [100]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040c5 00              undefined100h                     [101]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040c6 00              undefined100h                     [102]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;001040c7 00              undefined100h                     [103]</p>
+            </div>
+            <p>Nesse caso usei algumas regex com o editor vim para limpar o arquivo e deixar apenas o conteúdo da flag formatado, deixarei a seguir as regex usadas:</p>
+            <div class="box_text">
+                <p>:%s/\s\+\S\+\s00.*\n//g</p>
+                <p>:%s/^\s\+\S\+\s//g</p>
+                <p>:%s/\s\+.*\n//g</p>
+            </div>
+            <p>Após limpeza, ficará assim: <u style="color: red;">4854427b756e306266753563347433645f357472316e67357d</u></p>
+            <p>Para fazer a flag voltar a ser texto você pode usar uma ferramenta como cyberchef ou outra de sua escolha. No meu caso salvei a flag no arquivo 'hexa' e utilizei alguns comandos:</p>
+            <div class="box_text">
+                <p>// Transforma a saída em um formato reconhecido pelo comando "echo -e" que interpreta e transforma hexadecimais em caracteres</p>
+                <p>cat hexa | sed 's/\(..\)/\\x\1/g'</p>
+                <p>\x48\x54\x42\x7b\x75\x6e\x30\x62\x66\x75\x35\x63\x34\x74\x33\x64\x5f\x35\x74\x72\x31\x6e\x67\x35\x7d</p>
+                <p>// Uso do "echo -e" para transformar a flag em texto novamente</p>
+                <p>echo -e "\x48\x54\x42\x7b\x75\x6e\x30\x62\x66\x75\x35\x63\x34\x74\x33\x64\x5f\x35\x74\x72\x31\x6e\x67\x35\x7d"</p>
+                <p>HTB{REDACTED}</p>
+            </div>
+            <p>Voilà! Flag encontrada novamente!</p>
+        </div>
+    </body>
+</html>
