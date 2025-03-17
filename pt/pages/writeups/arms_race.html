@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt">
+	<head>
+		<meta charset="UTF-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>HTB - ARMs Race</title>
+		<link rel="stylesheet" type="text/css" href="/styles/global.css">
+		<link rel="icon" type="image/png" href="/images/icon.png">
+	</head>
+	<body>
+		<header>
+			<nav class="navbar">
+				<ul style="display: flex; list-style-type: none; padding: 0;">
+					<li style="margin-right: 20px;"><a href="/pt/index.html">H0ME</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/whoami.html">0xWHO4MI</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/articles.html">ART1G0S</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/writeups.html">WR1T3UPS</a></li>
+                    <li><a href="/en/index.html">EN-US</a></li>
+				</ul>
+			</nav>
+		</header>
+		<pre class="dystopian">
+▓█████▄   ▓██   ██▓   ██████   ▄▄▄█████▓   ▒█████     ██▓███     ██▓   ▄▄▄         ███▄    █ 
+▒██   █▌  ▒██   ██▒▒ ██    ▒   ▓  ██▒ ▓▒  ▒██▒  ██▒  ▓██░  ██  ▒▓██▒▒  ████▄       ██ ▀█   █ 
+░██   █▌   ▒██ ██░    ▓██▄     ▒ ▓██░ ▒░  ▒██░  ██▒  ▓██░ ██▓  ▒▒██▒▒  ██  ▀█▄    ▓██  ▀█ ██▒
+░▓█   █▌   ░ ▐██▓░    ▒   ██▒  ░ ▓██  ░   ▒██   ██░  ▒██▄█▓▒   ▒░██░░  ██▄▄▄▄██    ██   ▐▌██▒
+░█████▓    ░ ██▒░    ██████▒▒    ▒██▒ ░   ░ ████▓▒░  ▒██▒ ░    ░░██░   ▓█   ▓██   ▒██░   ▓██░
+▒▒▓  ▒      ██▒▒  ▒  ▒▓▒ ▒ ░    ▒ ░░   ░   ▒ ▒░ ░ ▒  ▓██       ░░▓     ▒▒   ▓▒█░  ░ ▒░   ▒ ▒ 
+░ ▒  ▒    ▓██ ░ ░ ░  ░▒  ░ ░      ░    ░   ░ ▒ ▒░ ░  ▒ ░        ▒ ░    ▒   ▒▒ ░  ░ ░░   ░ ▒░
+░ ░  ░    ▒ ▒  ░  ░    ░  ░      ░      ░   ░ ░ ▒  ░  ░          ▒ ░    ░   ▒        ░   ░ ░ 
+		</pre>
+        <div class="box_text">
+            <h2 style="text-align: center;">HTB - ARMs Race</h2><hr>
+            <h3>Sumário</h3>
+            <p><a href="#title-1" style="color: crimson;">1. Introdução</a></p>
+            <p><a href="#title-2" style="color: crimson;">2. Entendendo o desafio</a></p>
+            <p><a href="#title-3" style="color: crimson;">3. Resolução do desafio</a></p>
+            <p><a href="#title-4" style="color: crimson;">4. Conclusão</a></p>
+            <hr>
+            <h3 id="title-1">1. Introdução</h3>
+            <p>O desafio envolve a resolução de 50 níveis de código ARM, onde o objetivo é emular de forma rápida o código fornecido e retornar o valor final do registrador <u style="color: red;">r0</u>. O nome do desafio faz referência à arquitetura ARM e à necessidade de resolver os níveis rapidamente, como se fosse um corrida.</p>
+            <p>A arquitetura ARM é amplamente utilizada em dispositivos móveis, como smartphones, tablets, dispositivos embarcados e dispositivos IoT. Por ser uma arquitetura de baixo consumo de energia e alta eficiência, entender seu funcionamento é essencial para trabalhar com dispositivos que a utilizam.</p><hr>
+            <h3 id="title-2">2. Entendendo o desafio</h3>
+            <p>Ao me conectar ao servidor, recebi um código hexadecimal que representa instruções ARM. O objetivo é emular esse  código e retornar o valor final do registrador r0. O servidor exige respostas rápidas, o que torna inviável resolver os níveis manualmente. Portanto, a automação é essencial para a resolução do desafio.</p>
+            <div class="box_text">
+                <p>nc 83.136.249.46 34802</p>
+                <p>Level 1/50: 370301e3ff1f00e38e194fe3762a03e380244ce3010080e00200a0e0031205e36d1845e3042b05e3002e43e3010000e0020000e024180ee343144ae3a72a0be3882940e3010080e1020080e13e170be32e1c44e34e2904e32b2049e3010040e00200c0e05f180ae37f1849e3192404e3ec2d40e3010000e0020000e0cf1404e366194fe3ce2104e3832141e3010080e1020080e18c1407e3cc1c46e3362d0ce32f2441e3010080e1020080e1ff190de37b1d4ee3032704e399214be3010040e00200c0e0d11208e3571b46e3122a0fe3e72847e3010080e1020080e1971306e3af144ce344210ce3062046e3010080e1020080e1841b03e303184fe3eb2609e3512a47e3000060e22d150be3b41a4fe3872c0de3962f4ae3010040e00200c0e04c1305e3e51642e3ca2d0fe3852c49e3010020e0020020e0761d02e3811f45e3b1260ee3812b49e3010000e0020000e0ef160ee3fa134de33b2c01e3da2841e3010020e0020020e07b1203e34b1540e31d2205e3ea2041e3900100e0900200e0371803e3d01b42e3362b0fe3c92d47e3900100e0900200e0ce1204e3c21b40e3b22f05e3c12643e3010080e1020080e11c1f0ce3d81d4de34e2904e3aa234fe3010000e0020000e0d31601e32e184de35b220be3952140e3010020e0020020e0</p>
+                <p>Register r0:  Timeout! You took too long to provide input.</p>
+            </div>
+            <p>⟬ Ferramentas Utilizadas ⟭</p>
+            <p>Para resolver o desafio, utilizei duas bibliotecas Python:</p>
+            <ul>
+                <p>1. Capstone</p>
+                <ul>
+                    <li>Uma biblioteca de disassembling que converte código de máquina em instruções assembly legíveis.</li>
+                    <li><a href="https://www.capstone-engine.org/lang_python.html" target="_blank" style="color: aquamarine;">Capstone Tutorial</a></li>
+                </ul>
+                <p>2. Unicorn</p>
+                <ul>
+                    <li>Uma biblioteca de emulação que permite executar código de máquina em um ambiente controlado.</li>
+                    <li><a href="https://www.unicorn-engine.org/docs/tutorial.html" target="_blank" style="color: aquamarine;">Unicorn Tutorial</a></li>
+                </ul>
+            </ul><hr>
+            <h3 id="title-3">3. Resolução do desafio</h3>
+            <p>→ Primeira etapa: Disassembling com Capstone</p>
+            <p>Primeiro, utilizei o Capstone para disassemblar o código hexadecimal e entender as instruções ARM. O código abaixo foi usado para disassemblar o código ARM:</p>
+            <div class="box_text">
+                <p>from capstone import Cs, CS_ARCH_ARM, CS_MODE_ARM</p>
+                <p>from sys import argv</p>
+                <p>hex_code = "370301e3ff1f00e38e194fe3762a03e380244ce3010080e00200a0e0031205e36d1845e3042b05e3002e43e3010000e0020000e024180ee343144ae3a72a0be3882940e3010080e1020080e13e170be32e1c44e34e2904e32b2049e3010040e00200c0e05f180ae37f1849e3192404e3ec2d40e3010000e0020000e0cf1404e366194fe3ce2104e3832141e3010080e1020080e18c1407e3cc1c46e3362d0ce32f2441e3010080e1020080e1ff190de37b1d4ee3032704e399214be3010040e00200c0e0d11208e3571b46e3122a0fe3e72847e3010080e1020080e1971306e3af144ce344210ce3062046e3010080e1020080e1841b03e303184fe3eb2609e3512a47e3000060e22d150be3b41a4fe3872c0de3962f4ae3010040e00200c0e04c1305e3e51642e3ca2d0fe3852c49e3010020e0020020e0761d02e3811f45e3b1260ee3812b49e3010000e0020000e0ef160ee3fa134de33b2c01e3da2841e3010020e0020020e07b1203e34b1540e31d2205e3ea2041e3900100e0900200e0371803e3d01b42e3362b0fe3c92d47e3900100e0900200e0ce1204e3c21b40e3b22f05e3c12643e3010080e1020080e11c1f0ce3d81d4de34e2904e3aa234fe3010000e0020000e0d31601e32e184de35b220be3952140e3010020e0020020e0"</p>
+                <p></p>
+                <p>binary_code = bytes.fromhex(hex_code) # &lt;-- Converte os hexadecimais para bytes</p>
+                <p></p>
+                <p>md = Cs(CS_ARCH_ARM, CS_MODE_ARM) # &lt;-- Prepara o objeto CS com a arquitetura ARM e o modo ARM 32 bits</p>
+                <p>instructions = [f"{i.mnemonic} {i.op_str}" for i in md.disasm(binary_code, 0x1000)] # &lt;-- Pra cada instrução, extrai o mnemonico (instrução assembly) e os operandos, o loop é percorrido através do código assembly que começou o disassembler no endereço 0x1000</p>
+                <p></p>
+                <p>print("\n".join(instructions)) # &lt;-- Exibe as instruções</p>
+            </div>
+            <p>O código acima converte o código hexadecimal em instruções assembly, como:</p>
+            <div class="box_text">
+                <p>movw r0, #0x1337</p>
+                <p>movw r1, #0xfff</p>
+                <p>movt r1, #0xf98e</p>
+                <p>movw r2, #0x3a76</p>
+                <p>movt r2, #0xc480</p>
+                <p>add r0, r0, r1</p>
+                <p>adc r0, r0, r2</p>
+                <p>[...]</p>
+                <p>[OCULTO POR BREVIDADE]</p>
+                <p>[...]</p>
+                <p>and r0, r0, r1</p>
+                <p>and r0, r0, r2</p>
+                <p>movw r1, #0x16d3</p>
+                <p>movt r1, #0xd82e</p>
+                <p>movw r2, #0xb25b</p>
+                <p>movt r2, #0x195</p>
+                <p>eor r0, r0, r1</p>
+                <p>eor r0, r0, r2</p>
+            </div>
+            <p>Nesse momento dediquei um pouco de tempo para entender o funcionamento da arquitetura ARM antes de continuar.</p>
+            <p>Alguns links úteis que usei para entender mais sobre a arquitetura e conceitos chaves:</p>
+            <ul>
+                <li><a href="https://developer.arm.com/documentation/107656/0101/Registers/Registers-in-the-register-bank/R0-R12" target="_blank" style="color: aquamarine;">Registers R0-R12</a></li>
+                <li><a href="https://developer.arm.com/documentation/den0013/d/Introduction-to-Assembly-Language/The-ARM-instruction-sets" target="_blank" style="color: aquamarine;">The ARM instruction sets</a></li>
+                <li><a href="https://developer.arm.com/documentation/ddi0406/cb/Application-Level-Architecture/Instruction-Details/Alphabetical-list-of-instructions/MOV--immediate-" target="_blank" style="color: aquamarine;">MOV (immediate)</a></li>
+                <li><a href="https://developer.arm.com/documentation/dui0473/m/arm-and-thumb-instructions" target="_blank" style="color: aquamarine;">ARM and Thumb Instructions</a></li>
+                <li><a href="https://developer.arm.com/documentation/dui0170/b/arm-instruction-reference/arm-general-data-processing-instructions/add--sub--rsb--adc--sbc--and-rsc" target="_blank" style="color: aquamarine;">ADD, SUB, RSB, ADC, SBC, and RSC</a></li>
+                <li><a href="https://en.wikipedia.org/wiki/Two%27s_complement" target="_blank" style="color: aquamarine;">Two's complement</a></li>
+            </ul>
+            <p>→ Segunda etapa: Emulação com Unicorn</p>
+            <p>Após entendimento melhor sobre como funciona a arquitetura ARM e o código em questão, utilizei a biblioteca Unicorn para emular o código e calcular o valor final do registrador R0.</p>
+            <p>Links a respeito da biblioteca Unicorn:</p>
+            <ul>
+                <li><a href="https://www.unicorn-engine.org/" target="_blank" style="color: aquamarine;">Unicorn - The Ultimate CPU emulator</a></li>
+                <li><a href="https://github.com/unicorn-engine/unicorn/tree/master/bindings/python" target="_blank" style="color: aquamarine;">GitHub - bindings/python</a></li>
+                <li><a href="https://github.com/unicorn-engine/unicorn/blob/master/bindings/python/tests/test_arm.py" target="_blank" style="color: aquamarine;">Example Code - test_arm.py</a></li>
+            </ul>
+            <p>O código abaixo foi usado para emular o código ARM:</p>
+            <div class="box_text">
+                <p>from unicorn import *</p>
+                <p>from unicorn.arm_const import *</p>
+                <p>from pwn import *</p>
+                <p>connection = remote('83.136.249.46', 34802) # &lt;-- Inicia a conexão com o servidor remoto</p>
+                <p>connection.recvuntil(b'Level') # &lt;-- Aguarda o recebimento da string "Level"</p>
+                <p>hex_code = connection.recvline().decode().split(': ')[1].strip() # &lt;-- Busca o hexadecimal que o servidor fornece e armazena em hex_code</p>
+                <p>arm = Uc(UC_ARCH_ARM, UC_MODE_ARM) # &lt;-- Monta a classe UC com a arquitetura (ARM) e o modo usado (ARM 32 bits em oposição ao Thumb 16 bits)</p>
+                <p>ADDRESS = 0x1000 # &lt;-- Define o endereço para emular o código</p>
+                <p>arm.mem_map(ADDRESS, 0x1000) # &lt;-- Mapeia o endereço para a memória a partir do endereço 0x1000</p>
+                <p>code = bytes.fromhex(hex_code) # &lt;-- Converte os hexadecimais para bytes novamente</p>
+                <p>arm.mem_write(ADDRESS, code) # &lt;-- Escreve o código na memória</p>
+                <p>arm.reg_write(UC_ARM_REG_R0, 0) # &lt;-- Escreve 0 no registro R0 pois nessa biblioteca ele já tem o valor de 66</p>
+                <p>arm.emu_start(ADDRESS, ADDRESS + len(code)) # &lt;-- Inicia a emulação do código começando no endereço 0x1000 e terminando no endereço 0x1000 + len(code)</p>
+                <p>r0 = arm.reg_read(UC_ARM_REG_R0) # &lt;-- Retorna o valor final de R0</p>
+                <p>print(f"R0 value: {r0}") # &lt;-- Printa o valor de r0</p>
+                <p>connection.sendline(str(r0).encode()) # &lt;-- Envia o valor de r0 para o servidor</p>
+                <p>response = connection.recvall() # &lt;-- Aguarda a última resposta completa do servidor</p>
+                <p>print(response) # &lt;-- Exibe a resposta</p>
+                <p>connection.close() # &lt;-- Finaliza a conexão</p>
+            </div>
+            <p>Ao executar o código, consegui visualizar que obtive êxito ao resolver o desafio:</p>
+            <div class="box_text">
+                <p>python3 unicorn_solver.py</p>
+                <p>[+] Opening connection to 83.136.249.46 on port 34802: Done</p>
+                <p>R0 value: 3626081898</p>
+                <p>[+] Receiving all data: Done (1014B)</p>
+                <p>[*] Closed connection to 83.136.249.46 port 34802</p>
+                <p>b'Register r0:  Level 2/50: 370301e3c61b0be3f51d46e3d5240fe3532446e3010080e1020080e1111b03e3271a49e37f2d06e395274ee3010080e00200a0e0511a0ee3831547e308240ce37f2342e3010080e1020080e10b1607e32a1c48e3572009e32c2a45e3900100e0900200e0c31c05e36b1141e3d42a08e3382a4be3010000e0020000e0431a00e3e91b4fe371220ce3d12845e3010020e0020020e0111107e3951c47e3282e07e3c7294ee3000060e2fe1f04e30a1141e3f9200fe34f234ae3010040e00200c0e0191705e3bf1747e3142e0be3922a48e3000060e20d1e0de3f61a48e32c2307e337214ce3010080e1020080e14e10a0e34a1b4be3bb2c0be3a92442e3000060e2771606e389144ce3d52003e3fa264fe3000060e212100ce32d1e4ee36c2501e335264fe3900100e0900200e0b61f01e3701e4de3ea200de36d264de3000060e22f1803e3cc114de3d22700e3c22640e3010080e00200a0e0571f00e33c1c4be39a280ae330264ae3010080e00200a0e04e1f09e3b61842e3722103e3b52d47e3010040e00200c0e0ee1ca0e3d21246e3812606e3dd2749e3010040e00200c0e0c91d03e35e1344e36c2d05e33b2a41e3010020e0020020e0151602e3051849e32b240fe3d6284ee3010040e00200c0e0\nRegister r0:  Timeout! You took too long to provide input.\n'</p>
+            </div>
+            <p>→ Terceira Etapa: Automação do Processo</p>
+            <p>Para resolver os 50 níveis, criei um script que se conecta ao servidor, recebe o código hexadecimal, emula o código ARM e envia o valor do registrador R0 de volta. O script final ficou da seguinte forma:</p>
+            <div class="box_text">
+                <p>from pwn import *</p>
+                <p>from unicorn import *</p>
+                <p>from unicorn.arm_const import *</p>
+                <p># Emula o código ARM e retorna o valor de r0.</p>
+                <p>def emulate_arm_code(hex_code):</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;arm = Uc(UC_ARCH_ARM, UC_MODE_ARM) </p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;ADDRESS = 0x1000</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;arm.mem_map(ADDRESS, 0x1000)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;code = bytes.fromhex(hex_code)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;arm.mem_write(ADDRESS, code)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;arm.reg_write(UC_ARM_REG_R0, 0)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;arm.emu_start(ADDRESS, ADDRESS + len(code))</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;return arm.reg_read(UC_ARM_REG_R0)</p>
+                <p>conn = remote('83.136.249.46', 48033)</p>
+                <p>count = 0 # &lt;-- Contador para exibir a flag</p>
+                <p># Loop para resolver os níveis</p>
+                <p>for level in range(1, 51):</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;conn.recvuntil(b'Level')</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;hex_code = conn.recvline().decode().split(': ')[1].strip()</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;r0_value = emulate_arm_code(hex_code)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;conn.sendline(str(r0_value).encode())</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;print(f"Level {level}: r0 = {r0_value}") # &lt;-- Mensagem de debugging</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;count += 1 # &lt;-- Aumenta o contador</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;if count == 50: # &lt;-- Quando o contador chegar a 50 a flag será exibida, então esse if será atingido</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;flag = conn.recvall() # &lt;-- Recupera todo o valor final</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(flag) # &lt;-- Exibe o valor final do desafio</p>
+                <p>conn.close() # &lt;-- Finaliza a conexão</p>
+            </div>
+            <p>O script tem a função <u style="color: red;">emulate_arm_code()</u> que vai executar cada instrução ARM a partir dos hexadecimais e retornar o valor de R0, o loop é usado para resolver os 50 desafios, complementando com um contador que ao chegar no último desafio exibirá a flag:</p>
+            <div class="box_text">
+                <p>python3 resolve.py </p>
+                <p>[+] Opening connection to 83.136.249.46 on port 34802: Done</p>
+                <p>Level 1: r0 = 1945894653</p>
+                <p>Level 2: r0 = 1022247930</p>
+                <p>Level 3: r0 = 0</p>
+                <p>Level 4: r0 = 3128536044</p>
+                <p>Level 5: r0 = 4268744063</p>
+                <p>Level 6: r0 = 4278099966</p>
+                <p>Level 7: r0 = 2106459854</p>
+                <p>Level 8: r0 = 3620353730</p>
+                <p>[...]</p>
+                <p>Level 41: r0 = 3142985410</p>
+                <p>Level 42: r0 = 4294965247</p>
+                <p>Level 43: r0 = 71827641</p>
+                <p>Level 44: r0 = 145339265</p>
+                <p>Level 45: r0 = 3862590781</p>
+                <p>Level 46: r0 = 2147090367</p>
+                <p>Level 47: r0 = 4294246375</p>
+                <p>Level 48: r0 = 3891788783</p>
+                <p>Level 49: r0 = 678404085</p>
+                <p>Level 50: r0 = 2976932444</p>
+                <p>[+] Receiving all data: Done (109B)</p>
+                <p>[*] Closed connection to 83.136.249.46 port 34802</p>
+                <p>b'Register r0:  HTB{REDACTED}\n'</p>
+            </div><hr>
+            <h3 id="title-4">4. Conclusão</h3>
+            <p>Este desafio foi uma ótima oportunidade para aprender sobre a arquitetura ARM e como emular código de máquina usando ferramentas como Capstone e Unicorn. Essas habilidades são essenciais para trabalhar com engenharia reversa e análise de malware em diversos dispositivos.</p>
+        </div>
+    </body>
+</html>

@@ -41,6 +41,8 @@ body {
 	margin-right: 50px;
     font-family: 'ibm_font';
     font-size: 20px;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
 }
 .box_text a {
 	color: white;
