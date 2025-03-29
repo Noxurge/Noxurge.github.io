@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt">
+	<head>
+		<meta charset="UTF-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>HTB - Exatlon</title>
+		<link rel="stylesheet" type="text/css" href="/styles/global.css">
+		<link rel="icon" type="image/png" href="/images/icon.png">
+	</head>
+	<body>
+		<header>
+			<nav class="navbar">
+				<ul style="display: flex; list-style-type: none; padding: 0;">
+					<li style="margin-right: 20px;"><a href="/pt/index.html">H0ME</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/whoami.html">0xWHO4MI</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/articles.html">ART1G0S</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/writeups.html">WR1T3UPS</a></li>
+                    <li><a href="/en/index.html">EN-US</a></li>
+				</ul>
+			</nav>
+		</header>
+		<pre class="dystopian">
+▓█████▄   ▓██   ██▓   ██████   ▄▄▄█████▓   ▒█████     ██▓███     ██▓   ▄▄▄         ███▄    █ 
+▒██   █▌  ▒██   ██▒▒ ██    ▒   ▓  ██▒ ▓▒  ▒██▒  ██▒  ▓██░  ██  ▒▓██▒▒  ████▄       ██ ▀█   █ 
+░██   █▌   ▒██ ██░    ▓██▄     ▒ ▓██░ ▒░  ▒██░  ██▒  ▓██░ ██▓  ▒▒██▒▒  ██  ▀█▄    ▓██  ▀█ ██▒
+░▓█   █▌   ░ ▐██▓░    ▒   ██▒  ░ ▓██  ░   ▒██   ██░  ▒██▄█▓▒   ▒░██░░  ██▄▄▄▄██    ██   ▐▌██▒
+░█████▓    ░ ██▒░    ██████▒▒    ▒██▒ ░   ░ ████▓▒░  ▒██▒ ░    ░░██░   ▓█   ▓██   ▒██░   ▓██░
+▒▒▓  ▒      ██▒▒  ▒  ▒▓▒ ▒ ░    ▒ ░░   ░   ▒ ▒░ ░ ▒  ▓██       ░░▓     ▒▒   ▓▒█░  ░ ▒░   ▒ ▒ 
+░ ▒  ▒    ▓██ ░ ░ ░  ░▒  ░ ░      ░    ░   ░ ▒ ▒░ ░  ▒ ░        ▒ ░    ▒   ▒▒ ░  ░ ░░   ░ ▒░
+░ ░  ░    ▒ ▒  ░  ░    ░  ░      ░      ░   ░ ░ ▒  ░  ░          ▒ ░    ░   ▒        ░   ░ ░ 
+		</pre>
+        <div class="box_text">
+            <h2 style="text-align: center;">HTB - Exatlon</h2><hr>
+            <h3>Sumário</h3>
+            <p><a href="#title-1" style="color: crimson;">1. Introdução</a></p>
+            <p><a href="#title-2" style="color: crimson;">2. Identificação e Análise Inicial</a></p>
+            <p><a href="#title-3" style="color: crimson;">3. Descompactação do Binário</a></p>
+            <p><a href="#title-4" style="color: crimson;">4. Análise do Código Decompilado</a></p>
+            <p><a href="#title-5" style="color: crimson;">5. Conclusão</a></p>
+            <hr>
+			<h3 id="title-1">1. Introdução</h3>
+			<p>Neste write-up, realizo a engenharia reversa do binário <u style="color: red;">exatlon_v1</u>, identificando mecanismos de proteção e revertendo sua lógica para recuperar a flag original. Explicarei em detalhes os códigos decompilados pelo Ghidra e o processo de reversão da criptografia aplicada à flag.</p><hr>
+			<h3 id="title-2">2. Identificação e Análise Inicial</h3>
+			<p>O primeiro passo da análise foi inspecionar strings no binário usando <u style="color: red;">strings</u> e <u style="color: red;">head</u>:</p>
+			<div class="box_text">
+                <p>strings exatlon_v1 | head</p>
+                <p>UPX!&lt;</p>
+                <p>!E&8</p>
+			</div>
+            <p>Ao executar <u style="color: red;">strings</u>, encontrei 'UPX', indicando que o binário está compactado com o Ultimate Packer for eXecutables (UPX).</p>
+            <ul>
+                <a href="https://upx.github.io/" target="_blank" style="color: aquamarine;">→ GitHub UPX</a>
+            </ul><hr>
+			<h3 id="title-3">3. Descompactação do Binário</h3>
+            <p>Para prosseguir a análise, tive que encontrar uma solução para descompactar o arquivo. Para realizar a descompactação, encontrei o seguinte artigo que fala sobre engenharia reversa em executáveis compactados com UPX:</p>
+            <ul>
+                <a href="https://astrah.medium.com/reverse-engineering-upx-packed-executable-d9ed7df2f72" target="_blank" style="color: aquamarine;">→ REVERSE ENGINEERING:UPX PACKED EXECUTABLE</a>
+            </ul>
+            <p>Lendo esse artigo, o autor aponta uma ferramenta para descompactação, disponível em <u style="color: red;">https://github.com/upx/upx</u>. O download da release no momento desse write-up pode ser encontrado aqui:</p>
+            <ul>
+                <a href="https://github.com/upx/upx/releases/tag/v5.0.0" target="_blank" style="color: aquamarine;">→ UPX 5.0.0</a>
+            </ul>
+            <p>Para fazer a descompactação com a ferramenta já baixada, basta apenas executar o programa com os parâmetros <u style="color: red;">-d</u> (decompress) e <u style="color: red;">-o[File]</u> (escrever output):</p>
+            <div class="box_text">
+                <p>./upx-5.0.0-amd64_linux/upx -d exatlon_v1 -oexatlon_v1_unpack</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ultimate Packer for eXecutables</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Copyright (C) 1996 - 2025</p>
+                <p>UPX 5.0.0       Markus Oberhumer, Laszlo Molnar & John Reiser   Feb 20th 2025</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;File size&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ratio&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Format&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Name</p>
+                <p>&nbsp;&nbsp;&nbsp;--------------------&nbsp;&nbsp;&nbsp;------&nbsp;&nbsp;&nbsp;-----------&nbsp;&nbsp;&nbsp;-----------</p>
+                <p>&nbsp;&nbsp;&nbsp;2202568 &lt;-    709524&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;32.21%&nbsp;&nbsp;&nbsp;linux/amd64&nbsp;   exatlon_v1_unpack</p>
+                <p>Unpacked 1 file.</p>
+			</div><hr>
+			<h3 id="title-4">4. Análise do Código Decompilado</h3>
+            <p>Seguindo com a análise, agora é possível fazer o decompile mais preciso usando o Ghidra. A seguir disponibilizo e comento as principais lógicas do código da função <u style="color: red;">main</u>:</p>
+            <div class="box_text">
+                <p>undefined4</p>
+                <p>main(undefined8 param_1,undefined8 param_2,undefined8 param_3,undefined8 param_4,undefined8 param_5,</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;undefined8 param_6,undefined8 param_7,undefined8 param_8)</p>
+                <p>{</p>
+                <p>&nbsp;&nbsp;bool bVar1;</p>
+                <p>&nbsp;&nbsp;long *plVar2;</p>
+                <p>&nbsp;&nbsp;undefined4 unaff_R12D;</p>
+                <p>&nbsp;&nbsp;undefined8 extraout_XMM0_Qa;</p>
+                <p>&nbsp;&nbsp;string local_58 [32]; // &lt;-- Definição de variável  </p>
+                <p>&nbsp;&nbsp;string local_38 [32]; // &lt;-- Definição de variável</p>
+                <p>&nbsp;&nbsp;</p>
+                <p>&nbsp;&nbsp;do {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator&lt;&lt;(&std::cout,"</p>
+                <p>");</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator&lt;&lt;(&std::cout,&DAT_0054b018); // &lt;-- Contém strings do banner</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator&lt;&lt;(&std::cout,&DAT_0054b0d8); // &lt;-- Contém strings do banner</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;sleep(1);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator&lt;&lt;(&std::cout,&DAT_0054b1a8); // &lt;-- Contém strings do banner</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator&lt;&lt;(&std::cout,&DAT_0054b260); // &lt;-- Contém strings do banner</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;sleep(1);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator&lt;&lt;(&std::cout,&DAT_0054b320); // &lt;-- Contém strings do banner</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;sleep(1);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator&lt;&lt;(&std::cout,&DAT_0054b400); // &lt;-- Contém strings do banner</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;sleep(1);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::string::string(local_58);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator&lt;&lt;(&std::cout,"[+] Enter Exatlon Password  : "); // &lt;-- Exibe a mensagem para pedir a senha</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator>>(&std::cin,local_58); // &lt;-- Pede um input do usuário e armazena no local_58</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;exatlon(extraout_XMM0_Qa,param_2,param_3,param_4,param_5,param_6,param_7,param_8,local_38,local_58); // &lt;-- Transforma a senha de local_58 em uma sequência numérica (possivelmente criptografada) e armazena em local_38</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;bVar1 = std::operator==(local_38,"1152 1344 1056 1968 1728 816 1648 784 1584 816 1728 1520 1840 1664 784 1632 1856 1520 1728 816 1632 1856 1520 784 1760 1840 1824 816 1584 1856 784 1776 1760 528 528 2000 "); // &lt;-- Compara a sequência que está armazenada em local_38 com a flag que está criptografada</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::string::~string(local_38);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;// Se a senha processada (local_38) for igual à flag criptografada, exibe mensagem de sucesso e sai do loop</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;if (bVar1) { </p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plVar2 = std::operator&lt;&lt;(&std::cout,"[+] Looks Good ^_^\n\n\n");</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;std::ostream::operator&lt;&lt;(plVar2,std::endl&lt;&gt;);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unaff_R12D = 0;</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bVar1 = false;</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;else {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bVar1 = std::operator==(local_58,"q"); // &lt;-- Verifica se o usuário quer sair (digitou "q")</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (bVar1) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unaff_R12D = 0; // &lt;-- Código de saída 0 (sucesso)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bVar1 = false; // &lt;-- Sai do loop</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plVar2 = std::operator&lt;&lt;(&std::cout,"[-] ;(\n"); // &lt;-- Mensagem de senha incorreta</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;std::ostream::operator&lt;&lt;(plVar2,std::endl&lt;&gt;);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bVar1 = true; // &lt;-- Continua no loop</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::string::~string(local_58);</p>
+                <p>&nbsp;&nbsp;} while (bVar1);</p>
+                <p>&nbsp;&nbsp;return unaff_R12D;</p>
+                <p>}</p>
+			</div>
+            <p>Para entender como funciona completamente o programa foi necessário entender como funciona a função “<u style="color: red;">exatlon</u>”, o código decompilado e comentado está disponível a seguir:</p>
+            <div class="box_text">
+                <p>string * __cdecl</p>
+                <p>exatlon(undefined8 param_1_00,undefined8 param_2,undefined8 param_3,undefined8 param_4, undefined8 param_5,undefined8 param_6,undefined8 param_7,undefined8 param_8,string *param_9, string *param_10)</p>
+                <p>{</p>
+                <p>&nbsp;&nbsp;undefined8 uVar1;</p>
+                <p>&nbsp;&nbsp;char *pcVar2;</p>
+                <p>&nbsp;&nbsp;undefined8 extraout_XMM0_Qa;</p>
+                <p>&nbsp;&nbsp;long local_80;</p>
+                <p>&nbsp;&nbsp;undefined8 local_78 [2];</p>
+                <p>&nbsp;&nbsp;string local_68 [32];</p>
+                <p>&nbsp;&nbsp;string local_48 [39];</p>
+                <p>&nbsp;&nbsp;char local_21;</p>
+                <p>&nbsp;&nbsp;string *local_20;</p>
+                <p>&nbsp;&nbsp;</p>
+                <p>&nbsp;&nbsp;std::allocator<char>::allocator();</p>
+                <p>&nbsp;&nbsp;std::string::string(param_9,""); // &lt;-- Inicializa param_9 como uma string vazia</p>
+                <p>&nbsp;&nbsp;std::allocator<char>::~allocator();</p>
+                <p>&nbsp;&nbsp;local_20 = param_10; // &lt;-- Armazena a senha digitada para local_20</p>
+                <p>&nbsp;&nbsp;local_78[0] = std::string::begin(param_10); // &lt;-- Iterador para o começo da string</p>
+                <p>&nbsp;&nbsp;local_80 = std::string::end(local_20); // &lt;-- Iterador para o fim da string</p>
+                <p>&nbsp;&nbsp;// Loop para percorrer todas as strings</p>
+                <p>&nbsp;&nbsp;while( true ) {</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;uVar1 = operator!=((__normal_iterator&lt;&gt; *)local_78,(__normal_iterator&lt;&gt; *)&local_80); // &lt;-- Verifica se o iterador está no fim</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;if ((char)uVar1 == '\0') break; // &lt;-- Caso o iterador esteja no fim, encerra a função</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;pcVar2 = (char *)__normal_iterator&lt;&gt;::operator*((__normal_iterator&lt;&gt; *)local_78);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;local_21 = *pcVar2; // &lt;-- Contém o caractere atual</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::to_string(extraout_XMM0_Qa,param_2,param_3,param_4,param_5,param_6,param_7,param_8,local_48,int)local_21 &lt;&lt; 4); // &lt;-- Converte o caractere para inteiro, desloca 4 bits (shift-left bitwise) para a esquerda (equivale a multiplicar por 16) e transforma em string</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::operator+(local_68,local_48,(string *)&DAT_0054b00d); // &lt;-- Concatena o inteiro criptografado (local_48) com um espaço (" ") e armazena em local_68</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::string::operator+=(param_9,(undefined8 *)local_68); // &lt;-- Adiciona o inteiro + espaço (local_68) à string de saída (param_9)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::string::~string(local_68);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;std::string::~string(local_48);</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;__normal_iterator&lt;&gt;::operator++((__normal_iterator&lt;&gt; *)local_78);</p>
+                <p>&nbsp;&nbsp;}</p>
+                <p>&nbsp;&nbsp;return param_9; // &lt;-- Retorna a string criptografada (ex: "1152 1344...")</p>
+                <p>}</p>
+			</div><hr>
+			<h3 id="title-5">5. Resolução</h3>
+            <p>Sabendo sobre o deslocamento shift-left bitwise que criptografa o meu input, e que foi usado para criptografar a flag original, bastou apenas fazer um script em Python para reverter essa criptografia.</p>
+            <div class="box_text">
+			    <p>encoded = [1152, 1344, 1056, 1968, 1728, 816, 1648, 784, 1584, 816, 1728, 1520, 1840, 1664, 784, 1632, 1856, 1520, 1728, 816, 1632, 1856, 1520, 784, 1760, 1840, 1824, 816, 1584, 1856, 784, 1776, 1760, 528, 528, 2000]</p>
+                <p># Operação shift-right bitwise de 4 bits para direita para reverter a flag</p>
+			    <p>flag = [chr(i >> 4) for i in encoded]</p>
+                <p>print(''.join(flag))</p>
+			</div>
+            <p>Esse script faz o shift-right bitwise (direção contrária da criptografia original), e transforma os inteiros de volta para caracteres.</p>
+            <p>Este desafio demonstrou a importância de identificar e reverter compactações como UPX, além de compreender transformações simples como deslocamento bitwise para engenharia reversa de strings criptografadas.</p>
+        </div>
+	</body>
+</html>
