@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt">
+	<head>
+		<meta charset="UTF-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>HTB - BinCrypt Breaker</title>
+		<link rel="stylesheet" type="text/css" href="/styles/global.css">
+		<link rel="icon" type="image/png" href="/images/icon.png">
+	</head>
+	<body>
+		<header>
+			<nav class="navbar">
+				<ul style="display: flex; list-style-type: none; padding: 0;">
+					<li style="margin-right: 20px;"><a href="/pt/index.html">H0ME</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/whoami.html">0xWHO4MI</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/articles.html">ART1G0S</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/writeups.html">WR1T3UPS</a></li>
+                    <li><a href="/en/index.html">EN-US</a></li>
+				</ul>
+			</nav>
+		</header>
+		<pre class="dystopian">
+▓█████▄   ▓██   ██▓   ██████   ▄▄▄█████▓   ▒█████     ██▓███     ██▓   ▄▄▄         ███▄    █ 
+▒██   █▌  ▒██   ██▒▒ ██    ▒   ▓  ██▒ ▓▒  ▒██▒  ██▒  ▓██░  ██  ▒▓██▒▒  ████▄       ██ ▀█   █ 
+░██   █▌   ▒██ ██░    ▓██▄     ▒ ▓██░ ▒░  ▒██░  ██▒  ▓██░ ██▓  ▒▒██▒▒  ██  ▀█▄    ▓██  ▀█ ██▒
+░▓█   █▌   ░ ▐██▓░    ▒   ██▒  ░ ▓██  ░   ▒██   ██░  ▒██▄█▓▒   ▒░██░░  ██▄▄▄▄██    ██   ▐▌██▒
+░█████▓    ░ ██▒░    ██████▒▒    ▒██▒ ░   ░ ████▓▒░  ▒██▒ ░    ░░██░   ▓█   ▓██   ▒██░   ▓██░
+▒▒▓  ▒      ██▒▒  ▒  ▒▓▒ ▒ ░    ▒ ░░   ░   ▒ ▒░ ░ ▒  ▓██       ░░▓     ▒▒   ▓▒█░  ░ ▒░   ▒ ▒ 
+░ ▒  ▒    ▓██ ░ ░ ░  ░▒  ░ ░      ░    ░   ░ ▒ ▒░ ░  ▒ ░        ▒ ░    ▒   ▒▒ ░  ░ ░░   ░ ▒░
+░ ░  ░    ▒ ▒  ░  ░    ░  ░      ░      ░   ░ ░ ▒  ░  ░          ▒ ░    ░   ▒        ░   ░ ░ 
+		</pre>
+        <div class="box_text">
+            <h2 style="text-align: center;">HTB - BinCrypt Breaker</h2>
+            <hr>
+            <h2>Visão Geral</h2>
+            <p>O desafio nos fornece dois arquivos:</p>
+            <ul>
+                <li><u style="color: red;">checker</u>: um binário ELF 64-bits</li>
+                <li><u style="color: red;">file.bin</u>: aparentemente um arquivo de dados encriptado</li>
+            </ul>
+            <p>Ao executar o binário <u style="color: red;">checker</u>, ele solicita uma flag para verificar sua validade:</p>
+            <img src="../assets/bincrypt_breaker/image.png" alt="image" style="display: block; margin: 0 auto; border: 2px solid aquamarine;">
+            <hr>
+            <h2>Análise Inicial no Ghidra</h2>
+            <p>Ao abrir o <u style="color: red;">checker</u> no Ghidra, observamos sua função <u style="color: red;">main</u>:</p>
+            <img src="../assets/bincrypt_breaker/image1.png" alt="image1" style="display: block; margin: 0 auto; max-width: 80%; height: auto; border: 2px solid aquamarine;">
+            <p>Dois pontos chamam atenção:</p>
+            <ul>
+                <li>A função <u style="color: red;">decrypt</u></li>
+                <li>O uso do diretório <u style="color: red;">/proc/self/fd/</u></li>
+            </ul><hr>
+            <h2>Entendendo a função decrypt</h2>
+            <p>A <u style="color: red;">decrypt</u>:</p>
+            <img src="../assets/bincrypt_breaker/image2.png" alt="image2" style="display: block; margin: 0 auto; max-width: 80%; height: auto; border: 2px solid aquamarine;">
+            <ul>
+                <p>1. Abre o <u style="color: red;">file.bin</u> em modo leitura binária</p>
+                <p>2. Verifica a existência do arquivo, saindo com erro caso não exista</p>
+                <p>3. Abre o diretório atual com permissões <u style="color: red;">0755</u></p>
+                <p>4. Faz um XOR byte a byte do conteúdo com o valor <u style="color: red;">0xAB</u> (171)</p>
+                <p>5. Com base nisso, podemos descriptografar o arquivo de duas maneiras.</p>
+            </ul><hr>
+            <h2>-> Opção 1: Descriptografando via script Python</h2>
+            <div class="box_text">
+                <p>with open('file.bin', 'rb') as file, open('output', 'wb') as output:</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;for line in file:</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for byte in line:</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;xor = byte ^ 0xab</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;output.write(bytes([xor]))</p>
+            </div>
+            <p>Esse script gera o arquivo <u style="color: red;">output</u>, que é o conteúdo original de <u style="color: red;">file.bin</u>.</p><hr>
+            <h2>-> Opção 2: Extraindo da memória com `/proc`</h2>
+            <p>Podemos acessar o conteúdo descriptografado diretamente da memória do processo:</p>
+            <div class="box_text">
+                <p>./checker &&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;-- Executa o checker em background</p>
+                <p>ps aux&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;-- Identifica o processo (geralmente com nome "&lt;anonymous&gt;")</p>
+                <p>cd /proc/&lt;PID&gt;/fd</p>
+                <p>ls -l&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;-- Identifica os arquivos abertos pelo processo</p>
+                <p>cp 3 decrypt_memory  &lt;-- Copia o descritor 3, que corresponde ao arquivo aberto</p>
+            </div>
+            <p>Comparando os arquivos:</p>
+            <div class="box_text">
+                <p>sha256sum decrypt_memory output</p>
+                <p>-> Ambos possuem o mesmo hash:</p>
+                <p>-> 6240347c2002448bfe54d42c955e4898dce156bc8738766dab9e0e1bc7497dd5</p>
+            </div><hr>
+            <h2>O novo binário: output</h2>
+            <p>Após a descriptografia, temos outro ELF. A análise mostra que este novo binário também possui uma função de verificação de flag:</p>
+            <img src="../assets/bincrypt_breaker/image3.png" alt="image3" style="display: block; margin: 0 auto; max-width: 80%; height: auto; border: 2px solid aquamarine;">
+            <p>Renomeei as funções para facilitar a análise:</p>
+            <img src="../assets/bincrypt_breaker/image4.png" alt="image4" style="display: block; margin: 0 auto; max-width: 80%; height: auto; border: 2px solid aquamarine;">
+            <p>A flag é processada pela função <u style="color: red;">checkFlag</u>.</p><hr>
+            <h2>Entendendo 'checkFlag'</h2>
+            <p>A função <u style="color: red;">checkFlag</u> faz o seguinte:</p>
+            <img src="../assets/bincrypt_breaker/image5.png" alt="image5" style="display: block; margin: 0 auto; max-width: 80%; height: auto; border: 2px solid aquamarine;">
+            <ul>
+                <p>1. Verifica se a flag possui 28 caracteres</p>
+                <p>2. Chama <u style="color: red;">swapCalls</u> para embaralhar posições</p>
+                <p>3. Divide a flag em duas partes de 14 bytes (<u style="color: red;">splitFunc</u>)</p>
+                <p>4. Aplica uma transformação criptográfica (<u style="color: red;">cryptoFunc</u>) em cada parte</p>
+                <p>5. Compara o resultado final com a string:</p>
+            </ul>
+            <div class="box_text">
+                <p>RV{r15]_vcP3o]L_tazmfSTaa3s0</p>
+            </div><hr>
+            <h2>Funções auxiliares</h2>
+            <p>-&gt; swapCalls</p>
+            <p>Chama múltiplas vezes a função <u style="color: red;">swapFunc</u>:</p>
+            <img src="../assets/bincrypt_breaker/image6.png" alt="image6" style="display: block; margin: 0 auto; max-width: 80%; height: auto; border: 2px solid aquamarine;">
+            <p>-&gt; swapFunc</p>
+            <p>Realiza um swap básico entre dois índices:</p>
+            <img src="../assets/bincrypt_breaker/image7.png" alt="image7" style="display: block; margin: 0 auto; max-width: 80%; height: auto; border: 2px solid aquamarine;">
+            <p>Representação mais legível: </p>
+            <div class="box_text">
+                <p>uVar1 = userInput[origin];</p>
+                <p>userInput[origin] = userInput[destination];</p>
+                <p>destination[userInput] = uVar1;</p>
+            </div>
+            <p>As chamadas realizadas são:</p>
+            <div class="box_text">
+                <p>0 &lt;-&gt; 12</p>
+                <p>14 &lt;-&gt; 26</p>
+                <p>4 &lt;-&gt; 8</p>
+                <p>20 &lt;-&gt; 23</p>
+            </div>
+            <p>-&gt; splitFunc</p>
+            <img src="../assets/bincrypt_breaker/image8.png" alt="image8" style="display: block; margin: 0 auto; max-width: 80%; height: auto; border: 2px solid aquamarine;">
+            <p>Divide a flag em duas metades de 14 caracteres cada.</p>
+            <p>-&gt; cryptoFunc</p>
+            <img src="../assets/bincrypt_breaker/image9.png" alt="image9" style="display: block; margin: 0 auto; max-width: 80%; height: auto; border: 2px solid aquamarine;">
+            <p>Processo criptográfico:</p>
+            <ul>
+                <p>1. Aplica um mapeamento de permutação nos caracteres (8 vezes)</p>
+                <p>2. Realiza XOR em índices específicos (2, 4, 6, 8, 11, 13)</p>
+            </ul><hr>
+            <h2>Script de reversão</h2>
+            <p>Abaixo está o script Python que reverte a criptografia aplicada:</p>
+            <div class="box_text">
+                <p>flag_enc = 'RV{r15]_vcP3o]L_tazmfSTaa3s0'</p>
+                <p>part1 = flag_enc[:14]</p>
+                <p>part2 = flag_enc[14:]</p>
+                <p>def xor(part, value):</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;modified = list(part)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;xor_idx = [2, 4, 6, 8, 11, 13]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;for i in range(14):</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if i in xor_idx:</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;modified[i] = chr(ord(part[i]) ^ value)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;return "".join(modified)</p>
+                <p>def reverseMap(part):</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;mapping = [9, 12, 2, 10, 4, 1, 6, 3, 8, 5, 7, 11, 0, 13]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;inverse = [0] * len(mapping)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;for i in range(len(mapping)):</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;origin = mapping[i]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inverse[origin] = i</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;text = part</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;for _ in range(8):</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;new_text = [text[inverse[j]] for j in range(14)]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text = ''.join(new_text)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;return text</p>
+                <p>def swapFunc(flag):</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;flag = list(flag)</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;origin = [0, 14, 4, 20]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;to = [12, 26, 8, 23]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;for x, y in zip(origin, to):</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;flag[x], flag[y] = flag[y], flag[x]</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;print(f'Flag: HTB{{{''.join(flag)}}}')</p>
+                <p># Processo de reversão</p>
+                <p>pos_reverse1 = reverseMap(part1)</p>
+                <p>xor_1 = xor(pos_reverse1, 2)</p>
+                <p>pos_reverse2 = reverseMap(part2)</p>
+                <p>xor_2 = xor(pos_reverse2, 3)</p>
+                <p>flag = xor_1 + xor_2</p>
+                <p>swapFunc(flag)</p>
+            </div><hr>
+            <h2>Considerações Finais</h2>
+            <p>Esse desafio foi útil pra treinar várias coisas importantes de reversing:</p>
+            <ul>
+                <p>1. Trabalhar com múltiplos binários encadeados</p>
+                <p>2. Entender uso de XOR e mapeamento de índices pra ofuscar dados</p>
+                <p>3. Ver na prática como um programa pode esconder um segundo binário (dropper)</p>
+                <p>4. Explorar o /proc/self/fd/ pra pegar arquivos em memória</p>
+                <p>5. Reforçar lógica reversa e reconstrução de algoritmo de verificação de flag</p>
+            </ul>
+        </div>
+    </body>
+</html>
