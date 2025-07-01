@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt">
+	<head>
+		<meta charset="UTF-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Reaper's Eye - Honeypot Project</title>
+		<link rel="stylesheet" type="text/css" href="/styles/global.css">
+		<link rel="icon" type="image/png" href="/images/icon.png">
+	</head>
+	<body>
+		<header>
+			<nav class="navbar">
+				<ul style="display: flex; list-style-type: none; padding: 0;">
+					<li style="margin-right: 20px;"><a href="/pt/index.html">H0ME</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/whoami.html">0xWHO4MI</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/articles.html">ART1G0S</a></li>
+					<li style="margin-right: 20px;"><a href="/pt/pages/writeups.html">WR1T3UPS</a></li>
+                    <li><a href="/en/index.html">EN-US</a></li>
+				</ul>
+			</nav>
+		</header>
+		<pre class="dystopian">
+▓█████▄   ▓██   ██▓   ██████   ▄▄▄█████▓   ▒█████     ██▓███     ██▓   ▄▄▄         ███▄    █ 
+▒██   █▌  ▒██   ██▒▒ ██    ▒   ▓  ██▒ ▓▒  ▒██▒  ██▒  ▓██░  ██  ▒▓██▒▒  ████▄       ██ ▀█   █ 
+░██   █▌   ▒██ ██░    ▓██▄     ▒ ▓██░ ▒░  ▒██░  ██▒  ▓██░ ██▓  ▒▒██▒▒  ██  ▀█▄    ▓██  ▀█ ██▒
+░▓█   █▌   ░ ▐██▓░    ▒   ██▒  ░ ▓██  ░   ▒██   ██░  ▒██▄█▓▒   ▒░██░░  ██▄▄▄▄██    ██   ▐▌██▒
+░█████▓    ░ ██▒░    ██████▒▒    ▒██▒ ░   ░ ████▓▒░  ▒██▒ ░    ░░██░   ▓█   ▓██   ▒██░   ▓██░
+▒▒▓  ▒      ██▒▒  ▒  ▒▓▒ ▒ ░    ▒ ░░   ░   ▒ ▒░ ░ ▒  ▓██       ░░▓     ▒▒   ▓▒█░  ░ ▒░   ▒ ▒ 
+░ ▒  ▒    ▓██ ░ ░ ░  ░▒  ░ ░      ░    ░   ░ ▒ ▒░ ░  ▒ ░        ▒ ░    ▒   ▒▒ ░  ░ ░░   ░ ▒░
+░ ░  ░    ▒ ▒  ░  ░    ░  ░      ░      ░   ░ ░ ▒  ░  ░          ▒ ░    ░   ▒        ░   ░ ░ 
+        </pre>
+        <div class="box_text">
+            <h1 style="text-align: center;">Reaper's Eye - Honeypot Project</h1><hr>
+            <h2>1. Construindo um Honeypot HTTP de Baixo Custo com Visualização em Tempo Real</h2>
+            <p>A segurança ofensiva e a coleta de inteligência são fundamentais para entender como atores maliciosos se comportam na internet. Este projeto tem como objetivo apresentar a arquitetura de um honeypot HTTP leve, escalável e de baixo custo, utilizando tecnologias amplamente acessíveis, com foco em visualização e armazenamento de dados em tempo real.</p>
+            <p><span style="display: inline-block; border-left: 4px solid #ff0000; padding-left: 12px; background: #000000; font-family: ibm_font;">Este artigo não contém código-fonte intencionalmente. O objetivo é fornecer um guia conceitual que permita a qualquer profissional de segurança construir uma solução similar com base na arquitetura e boas práticas aqui descritas.</span></p><hr>
+            <h2>2. Objetivo do Projeto</h2>
+            <p>A ideia central é:</p>
+            <ul>
+                <li>Capturar requisições HTTP potencialmente maliciosas.</li>
+                <li>Armazenar e enriquecer esses dados de forma organizada.</li>
+                <li>Exibir as informações em um painel interativo e público.</li>
+                <li>Gastar o mínimo possível, aproveitando planos gratuitos.</li>
+            </ul><hr>
+            <h2>3. Arquitetura Geral</h2>
+            <p>A estrutura do projeto é composta pelos seguintes elementos:</p>
+            <ul>
+                <li>Servidor Honeypot (NGINX) – exposto na internet para atrair e registrar requisições.</li>
+                <li>Script Python – responsável por coletar e enriquecer os logs.</li>
+                <li>Banco de dados MongoDB Atlas – armazena os dados tratados.</li>
+                <li>Dashboard em Next.js – exibe os dados em gráficos e tabelas em tempo real.</li>
+                <li>Hospedagem via Vercel – entrega o frontend com domínio personalizado.</li>
+            </ul>
+            <img src="../assets/article_honeypot/diagram.png" alt="diagram.png" style="border-radius: 20px; max-width: 100%; height: auto; display: block; margin: 0 auto;"><hr>
+            <h2>4. O Honeypot HTTP</h2>
+            <p>A escolha do NGINX como honeypot foi motivada por sua leveza, popularidade e capacidade de log avançado. A configuração foi ajustada para registrar os seguintes campos por requisição:</p>
+            <ul>
+                <li>IP de origem</li>
+                <li>User-Agent</li>
+                <li>URI requisitado</li>
+                <li>Timestamp</li>
+                <li>Códigos de resposta</li>
+                <li>Método</li>
+                <li>Protocolo</li>
+                <li>Tamanho da requisição</li>
+                <li>Referer</li>
+            </ul>
+            <p>O servidor está exposto em uma instância cloud com portas específicas abertas, controladas via firewall, evitando exposição desnecessária.</p><hr>
+            <h2>5. Coleta e Enriquecimento dos Dados</h2>
+            <p>Utilizei um script em Python para:</p>
+            <ol>
+                <li>Ler continuamente os logs do NGINX.</li>
+                <li>Enriquecer cada evento com:</li>
+                <ul>
+                    <li>Geolocalização (país, código ISO)</li>
+                    <li>ASN (Autonomous System Number)</li>
+                    <li>Inserir os dados no MongoDB Atlas.</li>
+                </ul>
+            </ol>
+            <p>Foi criado uma tarefa no cronjob para esse coletor, a fim de manter o script ativo e realizar as coletas de logs em tempo real, enviando as informações para o banco de dados assim que ela é gerada.</p><hr>
+            <h2>6. Armazenamento com MongoDB Atlas</h2>
+            <p>O banco de dados escolhido foi o MongoDB Atlas (plano gratuito), que atende bem ao volume inicial de logs. Alguns pontos importantes:</p>
+            <ul>
+                <li>Uso de índices em campos de IP e data para performance.</li>
+                <li>Coleta estruturada com campos como:</li>
+                <ul>
+                    <li>ip, timestamp, user_agent, url, country, asn, etc.</li>
+                </ul>
+                <li>Acesso ao cluster limitado por IP e credenciais protegidas via variáveis de ambiente.</li>
+            </ul><hr>
+            <h2>7. Visualização com Next.js e Vercel</h2>
+            <p>Para a visualização dos dados, desenvolvi um painel web em Next.js, utilizando bibliotecas como:</p>
+            <ul>
+                <li>Recharts para gráficos de barras e linhas.</li>
+                <li>TailwindCSS para estilização rápida e responsiva.</li>
+                <li>MongoDB Driver para consumir os dados diretamente do Atlas.</li>
+            </ul>
+            <p>A aplicação é hospedada na Vercel com domínio próprio, permitindo o acesso público ao painel.</p>
+            <img src="../assets/article_honeypot/dashboard_panel.png" alt="dashboard_panel.png" style="max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 20px;"><hr>
+            <h2>8. Desafios Enfrentados</h2>
+            <ul>
+                <li>Limites de requisição em APIs externas de geolocalização: resolvido com uso de DBs de geolocalização locais.</li>
+                <li>Coleta duplicada de logs antigos: resolvido com coleta de logs em tempo real.</li>
+            </ul><hr>
+            <h2>9. Como Replicar a Arquitetura</h2>
+            <p>Mesmo sem expor o código, qualquer profissional pode montar algo semelhante com os seguintes passos:</p>
+            <ol>
+                <li>Suba uma instância GCP/AWS/Azure com NGINX e configure logs personalizados.</li>
+                <li>Crie um script Python para processar os logs e enriquecer com dados de IP.</li>
+                <li>Use MongoDB Atlas para armazenar os eventos.</li>
+                <li>Crie um frontend com Next.js para exibir as informações de forma acessível.</li>
+                <li>Hospede a aplicação na Vercel e conecte a um domínio.</li>
+            </ol><hr>
+            <h2>10. Conclusão e Próximos Passos</h2>
+            <p>Este projeto mostrou que é possível construir um honeypot funcional e útil com custo quase nulo, utilizando ferramentas modernas e gratuitas. A arquitetura é modular e permite melhorias contínuas, como:</p>
+            <ul>
+                <li>Classificação automática de requisições (ex: scanner, brute-force, exploit).</li>
+                <li>Envio de alertas para um canal privado.</li>
+                <li>Geração de feeds de IPs maliciosos.</li>
+                <li>Exportação de dados para análise em SIEM ou ferramenta de Threat Intel.</li>
+            </ul><hr>
+            <h2>11. Considerações finais</h2>
+            <p>Link para a dashboard do honeypot: <a href="https://honeypot.noxurge.com.br/" target="_blank" style="color: purple;">Reaper's Eye</a></p>
+            <p>Este projeto representa não apenas uma solução técnica, mas também uma forma de explorar e entender o comportamento de ameaças reais na internet por meio de um sistema totalmente controlado. O “Reaper's Eye” é mais do que um honeypot: é uma ferramenta de aprendizado constante, desenvolvimento pessoal e contribuição para a comunidade.</p>
+            <p>Ao compartilhar a arquitetura e os princípios deste projeto, espero inspirar outros profissionais e entusiastas da segurança a criarem suas próprias soluções, adaptadas às suas realidades. Com criatividade e as ferramentas certas, é possível alcançar um alto nível de insight e eficiência sem depender de grandes investimentos.</p>
+            <p>Se quiser conversar sobre segurança ofensiva/defensiva, threat intelligence ou tiver ideias para evoluir este projeto, sinta-se à vontade para entrar em contato comigo em meu <strong><a href="https://www.linkedin.com/in/medeiros--renan/" target="_blank" style="color:rgb(0, 68, 255);">linkedin</a></strong>.</p><hr>
+            <p style="font-style: italic; color: #c70000; text-align: center;">A suprema arte da guerra é vencer o inimigo sem lutar.</p>
+        </div>
+    </body>
+</html>
